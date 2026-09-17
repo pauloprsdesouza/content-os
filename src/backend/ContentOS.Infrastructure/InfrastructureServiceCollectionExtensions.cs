@@ -3,6 +3,10 @@ using ContentOS.Application.Catalog.GetEdition;
 using ContentOS.Application.Catalog.ListProducts;
 using ContentOS.Application.Catalog.Ports;
 using ContentOS.Application.Catalog.ReplaceCurriculum;
+using ContentOS.Application.Commerce.ListPurchases;
+using ContentOS.Application.Commerce.Ports;
+using ContentOS.Application.Commerce.ReceiveKiwifyWebhook;
+using ContentOS.Application.Commerce.RunReconciliation;
 using ContentOS.Application.Content.Approve;
 using ContentOS.Application.Content.ApplyGenerateResult;
 using ContentOS.Application.Content.ApplyReviewResult;
@@ -24,6 +28,10 @@ using ContentOS.Application.Knowledge.Snapshots.GetSnapshots;
 using ContentOS.Application.Knowledge.Sources.Create;
 using ContentOS.Application.Knowledge.Sources.GetSource;
 using ContentOS.Application.Knowledge.Sources.GetSources;
+using ContentOS.Application.Learning.EvaluateCapstone;
+using ContentOS.Application.Learning.GetOutcomesSummary;
+using ContentOS.Application.Learning.Ports;
+using ContentOS.Application.Learning.SubmitCapstone;
 using ContentOS.Application.Messaging;
 using ContentOS.Application.Operations.Get;
 using ContentOS.Application.Operations.Ports;
@@ -40,10 +48,12 @@ using ContentOS.Application.Research.List;
 using ContentOS.Application.Research.Ports;
 using ContentOS.Infrastructure.Blobs;
 using ContentOS.Infrastructure.Catalog;
+using ContentOS.Infrastructure.Commerce;
 using ContentOS.Infrastructure.Content;
 using ContentOS.Infrastructure.Ids;
 using ContentOS.Infrastructure.Identity;
 using ContentOS.Infrastructure.Knowledge;
+using ContentOS.Infrastructure.Learning;
 using ContentOS.Infrastructure.Messaging;
 using ContentOS.Infrastructure.Operations;
 using ContentOS.Infrastructure.Options;
@@ -79,9 +89,23 @@ public static class InfrastructureServiceCollectionExtensions
             .Bind(configuration.GetSection(AiWorkerOptions.SectionName));
         services.AddOptions<SecurityOptions>()
             .Bind(configuration.GetSection(SecurityOptions.SectionName));
+        services.AddOptions<CommerceOptions>()
+            .Bind(configuration.GetSection(CommerceOptions.SectionName));
 
         services.AddOptions<DevelopmentSeedOptions>()
             .Bind(configuration.GetSection(DevelopmentSeedOptions.SectionName));
+
+        services.AddHttpClient(HttpKiwifyOrderReconciler.HttpClientName, (sp, client) =>
+        {
+            var commerce = sp.GetRequiredService<IOptions<CommerceOptions>>().Value;
+            if (!string.IsNullOrWhiteSpace(commerce.BaseUrl)
+                && Uri.TryCreate(commerce.BaseUrl, UriKind.Absolute, out var baseUri))
+            {
+                client.BaseAddress = baseUri;
+            }
+
+            client.Timeout = TimeSpan.FromSeconds(30);
+        });
 
         services.AddDbContext<PlatformDbContext>((serviceProvider, options) =>
         {
@@ -128,6 +152,26 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IPublicationPackageRepository, PublicationPackageRepository>();
         services.AddScoped<IApprovedContentVersionLookup, ApprovedContentVersionLookup>();
         services.AddScoped<IOperationRepository, OperationRepository>();
+        services.AddScoped<IWebhookInboxRepository, WebhookInboxRepository>();
+        services.AddScoped<IPurchaseRepository, PurchaseRepository>();
+        services.AddScoped<IReconciliationRunRepository, ReconciliationRunRepository>();
+        services.AddScoped<IPurchasesQuery, PurchasesQuery>();
+        services.AddScoped<IWebhookSignatureVerifier, HmacSha256WebhookSignatureVerifier>();
+        services.AddScoped<ILearnerRepository, LearnerRepository>();
+        services.AddScoped<IEnrollmentRepository, EnrollmentRepository>();
+        services.AddScoped<ICapstoneRepository, CapstoneRepository>();
+        services.AddScoped<IEvaluationRepository, EvaluationRepository>();
+        services.AddScoped<IOutcomeRepository, OutcomeRepository>();
+        services.AddScoped<IOutcomesSummaryQuery, OutcomesSummaryQuery>();
+        services.AddScoped<ICommerceOrderReconciler>(serviceProvider =>
+        {
+            var commerce = serviceProvider.GetRequiredService<IOptions<CommerceOptions>>().Value;
+            return commerce.UseStubProvider
+                ? serviceProvider.GetRequiredService<StubCommerceOrderReconciler>()
+                : serviceProvider.GetRequiredService<HttpKiwifyOrderReconciler>();
+        });
+        services.AddScoped<StubCommerceOrderReconciler>();
+        services.AddScoped<HttpKiwifyOrderReconciler>();
         services.AddScoped<CreateSourceHandler>();
         services.AddScoped<GetSourcesHandler>();
         services.AddScoped<GetSourceHandler>();
@@ -159,6 +203,12 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<ExportPublicationPackageHandler>();
         services.AddScoped<ConfirmPublicationHandler>();
         services.AddScoped<GetOperationHandler>();
+        services.AddScoped<ReceiveKiwifyWebhookHandler>();
+        services.AddScoped<RunReconciliationHandler>();
+        services.AddScoped<ListPurchasesHandler>();
+        services.AddScoped<GetOutcomesSummaryHandler>();
+        services.AddScoped<SubmitCapstoneHandler>();
+        services.AddScoped<EvaluateCapstoneHandler>();
         services.AddHostedService<DevelopmentSeedHostedService>();
         services.AddHostedService<AiResultConsumerHostedService>();
 

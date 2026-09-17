@@ -1,8 +1,10 @@
 using ContentOS.Api.Catalog;
+using ContentOS.Api.Commerce;
 using ContentOS.Api.Content;
 using ContentOS.Api.Http;
 using ContentOS.Api.Internal;
 using ContentOS.Api.Knowledge;
+using ContentOS.Api.Learning;
 using ContentOS.Api.Operations;
 using ContentOS.Api.Publication;
 using ContentOS.Api.Research;
@@ -110,6 +112,8 @@ app.MapResearchEndpoints();
 app.MapContentEndpoints();
 app.MapCatalogEndpoints();
 app.MapPublicationEndpoints();
+app.MapCommerceEndpoints();
+app.MapLearningEndpoints();
 app.MapOperationsEndpoints();
 app.MapInternalEndpoints();
 

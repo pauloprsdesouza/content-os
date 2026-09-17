@@ -1,6 +1,8 @@
 using ContentOS.Domain.Catalog;
+using ContentOS.Domain.Commerce;
 using ContentOS.Domain.Content;
 using ContentOS.Domain.Knowledge;
+using ContentOS.Domain.Learning;
 using ContentOS.Domain.Operations;
 using ContentOS.Domain.Publication;
 using ContentOS.Domain.Research;
@@ -40,6 +42,22 @@ public sealed class PlatformDbContext(
     public DbSet<CurriculumItem> CurriculumItems => Set<CurriculumItem>();
 
     public DbSet<PublicationPackage> PublicationPackages => Set<PublicationPackage>();
+
+    public DbSet<WebhookInboxEntry> WebhookInboxEntries => Set<WebhookInboxEntry>();
+
+    public DbSet<Purchase> Purchases => Set<Purchase>();
+
+    public DbSet<ReconciliationRun> ReconciliationRuns => Set<ReconciliationRun>();
+
+    public DbSet<Learner> Learners => Set<Learner>();
+
+    public DbSet<Enrollment> Enrollments => Set<Enrollment>();
+
+    public DbSet<Capstone> Capstones => Set<Capstone>();
+
+    public DbSet<Evaluation> Evaluations => Set<Evaluation>();
+
+    public DbSet<Outcome> Outcomes => Set<Outcome>();
 
     public DbSet<Operation> Operations => Set<Operation>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
