@@ -16,6 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\backend\ContentOS.Domain\ContentOS.Domain.csproj" />
     <ProjectReference Include="..\..\src\backend\ContentOS.SharedKernel\ContentOS.SharedKernel.csproj" />
   </ItemGroup>
 

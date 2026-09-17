@@ -18,7 +18,9 @@ builder.Services.AddDbContext<PlatformDbContext>((serviceProvider, options) =>
         .GetRequiredService<IOptions<ConnectionStringsOptions>>()
         .Value
         .Platform;
-    options.UseNpgsql(connectionString);
+    options.UseNpgsql(
+        connectionString,
+        npgsql => npgsql.MigrationsAssembly("ContentOS.Migrations"));
 });
 builder.Services.AddScoped<MigrationRunner>();
 

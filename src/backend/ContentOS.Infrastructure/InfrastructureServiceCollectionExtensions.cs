@@ -1,8 +1,21 @@
 using ContentOS.Application.Blobs;
+using ContentOS.Application.Knowledge.Claims.Approve;
+using ContentOS.Application.Knowledge.Claims.CreateForReview;
+using ContentOS.Application.Knowledge.Claims.GetClaim;
+using ContentOS.Application.Knowledge.Claims.GetReviewQueue;
+using ContentOS.Application.Knowledge.Claims.Reject;
+using ContentOS.Application.Knowledge.Ports;
+using ContentOS.Application.Knowledge.Snapshots.Create;
+using ContentOS.Application.Knowledge.Snapshots.GetSnapshots;
+using ContentOS.Application.Knowledge.Sources.Create;
+using ContentOS.Application.Knowledge.Sources.GetSource;
+using ContentOS.Application.Knowledge.Sources.GetSources;
 using ContentOS.Application.Messaging;
+using ContentOS.Application.Persistence;
 using ContentOS.Infrastructure.Blobs;
 using ContentOS.Infrastructure.Ids;
 using ContentOS.Infrastructure.Identity;
+using ContentOS.Infrastructure.Knowledge;
 using ContentOS.Infrastructure.Messaging;
 using ContentOS.Infrastructure.Options;
 using ContentOS.Infrastructure.Persistence;
@@ -40,7 +53,9 @@ public static class InfrastructureServiceCollectionExtensions
                 .GetRequiredService<IOptions<ConnectionStringsOptions>>()
                 .Value
                 .Platform;
-            options.UseNpgsql(connectionString);
+            options.UseNpgsql(
+                connectionString,
+                npgsql => npgsql.MigrationsAssembly("ContentOS.Migrations"));
         });
 
         services.AddIdentityCore<ApplicationUser>(options =>
@@ -55,6 +70,24 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddSingleton<IIdGenerator, UuidV7IdGenerator>();
         services.AddSingleton<IBlobStore, FileSystemBlobStore>();
         services.AddScoped<IMessagePublisher, WolverineMessagePublisher>();
+        services.AddScoped<IChangeCommitter, EfChangeCommitter>();
+        services.AddScoped<ISourceRepository, SourceRepository>();
+        services.AddScoped<ISourceSnapshotRepository, SourceSnapshotRepository>();
+        services.AddScoped<IEvidenceRepository, EvidenceRepository>();
+        services.AddScoped<IClaimRepository, ClaimRepository>();
+        services.AddScoped<ISourcesQuery, SourcesQuery>();
+        services.AddScoped<ISnapshotsQuery, SnapshotsQuery>();
+        services.AddScoped<IClaimReviewQueueQuery, ClaimReviewQueueQuery>();
+        services.AddScoped<CreateSourceHandler>();
+        services.AddScoped<GetSourcesHandler>();
+        services.AddScoped<GetSourceHandler>();
+        services.AddScoped<CreateSnapshotHandler>();
+        services.AddScoped<GetSnapshotsHandler>();
+        services.AddScoped<GetClaimHandler>();
+        services.AddScoped<GetClaimReviewQueueHandler>();
+        services.AddScoped<ApproveClaimHandler>();
+        services.AddScoped<RejectClaimHandler>();
+        services.AddScoped<CreateClaimForReviewHandler>();
 
         return services;
     }

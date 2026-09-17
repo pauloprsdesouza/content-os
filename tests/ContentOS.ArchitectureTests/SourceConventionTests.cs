@@ -69,6 +69,7 @@ public sealed class SourceConventionTests
         return Directory.EnumerateFiles(repositoryRoot, "*.cs", SearchOption.AllDirectories)
             .Where(file => !ContainsDirectory(file, "bin"))
             .Where(file => !ContainsDirectory(file, "obj"))
+            .Where(file => !IsEfMigrationArtifact(file))
             .Where(file => !file.EndsWith(".Designer.cs", StringComparison.OrdinalIgnoreCase))
             .Where(file => !file.EndsWith(".g.cs", StringComparison.OrdinalIgnoreCase))
             .Where(file => !string.Equals(
@@ -79,6 +80,31 @@ public sealed class SourceConventionTests
                 Path.GetFileName(file),
                 "GlobalUsings.cs",
                 StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static bool IsEfMigrationArtifact(string path)
+    {
+        var fileName = Path.GetFileName(path);
+        if (fileName.EndsWith("ModelSnapshot.cs", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        // EF timestamps migrations as yyyyMMddHHmmss_Name.cs
+        if (fileName.Length <= 15 || fileName[14] != '_')
+        {
+            return false;
+        }
+
+        for (var index = 0; index < 14; index++)
+        {
+            if (!char.IsDigit(fileName[index]))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private static bool ContainsDirectory(string path, string directoryName)
