@@ -1,8 +1,10 @@
+using ContentOS.Api.Catalog;
 using ContentOS.Api.Content;
 using ContentOS.Api.Http;
 using ContentOS.Api.Internal;
 using ContentOS.Api.Knowledge;
 using ContentOS.Api.Operations;
+using ContentOS.Api.Publication;
 using ContentOS.Api.Research;
 using ContentOS.Contracts.Auth;
 using ContentOS.Contracts.Dashboard;
@@ -57,6 +59,11 @@ builder.Services.AddAuthorization(options =>
         policy => policy
             .RequireAuthenticatedUser()
             .RequireClaim("capability", CapabilityNames.ContentApprove));
+    options.AddPolicy(
+        CapabilityNames.PublicationConfirm,
+        policy => policy
+            .RequireAuthenticatedUser()
+            .RequireClaim("capability", CapabilityNames.PublicationConfirm));
 });
 builder.Services
     .AddOptions<CookieAuthenticationOptions>(IdentityConstants.ApplicationScheme)
@@ -101,6 +108,8 @@ app.MapHealthChecks("/health");
 app.MapKnowledgeEndpoints();
 app.MapResearchEndpoints();
 app.MapContentEndpoints();
+app.MapCatalogEndpoints();
+app.MapPublicationEndpoints();
 app.MapOperationsEndpoints();
 app.MapInternalEndpoints();
 

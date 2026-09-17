@@ -11,4 +11,6 @@ public sealed class DevelopmentSeedOptions
     public string AdminPassword { get; init; } = string.Empty;
 
     public bool SeedDemoKnowledge { get; init; } = true;
+
+    public bool SeedDemoCatalog { get; init; } = true;
 }

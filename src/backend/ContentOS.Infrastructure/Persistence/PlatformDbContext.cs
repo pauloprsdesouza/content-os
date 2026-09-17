@@ -1,6 +1,8 @@
+using ContentOS.Domain.Catalog;
 using ContentOS.Domain.Content;
 using ContentOS.Domain.Knowledge;
 using ContentOS.Domain.Operations;
+using ContentOS.Domain.Publication;
 using ContentOS.Domain.Research;
 using ContentOS.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity;
@@ -30,6 +32,14 @@ public sealed class PlatformDbContext(
     public DbSet<ContentUnit> ContentUnits => Set<ContentUnit>();
 
     public DbSet<ContentVersion> ContentVersions => Set<ContentVersion>();
+
+    public DbSet<Product> Products => Set<Product>();
+
+    public DbSet<Edition> Editions => Set<Edition>();
+
+    public DbSet<CurriculumItem> CurriculumItems => Set<CurriculumItem>();
+
+    public DbSet<PublicationPackage> PublicationPackages => Set<PublicationPackage>();
 
     public DbSet<Operation> Operations => Set<Operation>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)

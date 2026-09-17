@@ -1,8 +1,11 @@
 using System.Text;
+using ContentOS.Application.Catalog.Ports;
 using ContentOS.Application.Knowledge.Claims.CreateForReview;
 using ContentOS.Application.Knowledge.Ports;
 using ContentOS.Application.Knowledge.Snapshots.Create;
 using ContentOS.Application.Knowledge.Sources.Create;
+using ContentOS.Application.Persistence;
+using ContentOS.Domain.Catalog;
 using ContentOS.Domain.Identity;
 using ContentOS.Domain.Knowledge;
 using ContentOS.Infrastructure.Options;
@@ -35,6 +38,11 @@ public sealed class DevelopmentSeedHostedService(
         if (options.Value.SeedDemoKnowledge)
         {
             await EnsureDemoKnowledgeAsync(services, cancellationToken);
+        }
+
+        if (options.Value.SeedDemoCatalog)
+        {
+            await EnsureDemoCatalogAsync(services, cancellationToken);
         }
     }
 
@@ -98,38 +106,49 @@ public sealed class DevelopmentSeedHostedService(
             }
         }
 
-        var claims = await userManager.GetClaimsAsync(user);
-        if (!claims.Any(claim =>
-                claim.Type == "capability"
-                && claim.Value == CapabilityNames.KnowledgeApprove))
-        {
-            var addClaim = await userManager.AddClaimAsync(
-                user,
-                new System.Security.Claims.Claim("capability", CapabilityNames.KnowledgeApprove));
-            if (!addClaim.Succeeded)
-            {
-                throw new InvalidOperationException(
-                    $"Failed to add knowledge.approve claim: {FormatErrors(addClaim)}");
-            }
-        }
-
-        claims = await userManager.GetClaimsAsync(user);
-        if (!claims.Any(claim =>
-                claim.Type == "capability"
-                && claim.Value == CapabilityNames.ContentApprove))
-        {
-            var addClaim = await userManager.AddClaimAsync(
-                user,
-                new System.Security.Claims.Claim("capability", CapabilityNames.ContentApprove));
-            if (!addClaim.Succeeded)
-            {
-                throw new InvalidOperationException(
-                    $"Failed to add content.approve claim: {FormatErrors(addClaim)}");
-            }
-        }
+        await EnsureCapabilityAsync(
+            userManager,
+            user,
+            CapabilityNames.KnowledgeApprove,
+            cancellationToken);
+        await EnsureCapabilityAsync(
+            userManager,
+            user,
+            CapabilityNames.ContentApprove,
+            cancellationToken);
+        await EnsureCapabilityAsync(
+            userManager,
+            user,
+            CapabilityNames.PublicationConfirm,
+            cancellationToken);
 
         logger.LogInformation("Development admin seed ensured for {Email}.", seed.AdminEmail);
         cancellationToken.ThrowIfCancellationRequested();
+    }
+
+    private static async Task EnsureCapabilityAsync(
+        UserManager<ApplicationUser> userManager,
+        ApplicationUser user,
+        string capability,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var claims = await userManager.GetClaimsAsync(user);
+        if (claims.Any(claim =>
+                claim.Type == "capability"
+                && claim.Value == capability))
+        {
+            return;
+        }
+
+        var addClaim = await userManager.AddClaimAsync(
+            user,
+            new System.Security.Claims.Claim("capability", capability));
+        if (!addClaim.Succeeded)
+        {
+            throw new InvalidOperationException(
+                $"Failed to add {capability} claim: {FormatErrors(addClaim)}");
+        }
     }
 
     private async Task EnsureDemoKnowledgeAsync(
@@ -198,6 +217,41 @@ public sealed class DevelopmentSeedHostedService(
                 "Seeded demo claim {ClaimId} for local review.",
                 claimResult.ClaimId);
         }
+    }
+
+    private async Task EnsureDemoCatalogAsync(
+        IServiceProvider services,
+        CancellationToken cancellationToken)
+    {
+        var products = services.GetRequiredService<IProductRepository>();
+        if (await products.AnyAsync(cancellationToken))
+        {
+            return;
+        }
+
+        var editions = services.GetRequiredService<IEditionRepository>();
+        var changes = services.GetRequiredService<IChangeCommitter>();
+        var now = services.GetRequiredService<TimeProvider>().GetUtcNow();
+
+        var product = Product.Create(
+            Guid.Parse("01999999-0001-7000-8000-000000000001"),
+            "Curso Demo Content OS",
+            "Produto de demonstração para currículo e publicação local.",
+            now);
+        var edition = Edition.Create(
+            Guid.Parse("01999999-0001-7000-8000-000000000002"),
+            product.Id,
+            "Edição 2026",
+            now);
+
+        products.Add(product);
+        editions.Add(edition);
+        await changes.CommitAsync(cancellationToken);
+
+        logger.LogInformation(
+            "Seeded demo product {ProductId} and edition {EditionId}.",
+            product.Id,
+            edition.Id);
     }
 
     private static string FormatErrors(IdentityResult result) =>
