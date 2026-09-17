@@ -3,15 +3,15 @@ import { Toaster } from "sonner"
 
 import { AppShell } from "@/components/app-shell"
 import { ClaimsPage } from "@/pages/claims-page"
+import { ConteudoPage } from "@/pages/conteudo-page"
 import { DashboardPage } from "@/pages/dashboard-page"
 import { LoginPage } from "@/pages/login-page"
+import { PesquisaPage } from "@/pages/pesquisa-page"
 import { PlaceholderPage } from "@/pages/placeholder-page"
 import { SourceDetailPage } from "@/pages/source-detail-page"
 import { SourcesPage } from "@/pages/sources-page"
 
 const placeholderRoutes = [
-  { path: "pesquisa", name: "Pesquisa" },
-  { path: "conteudo", name: "Conteúdo" },
   { path: "produtos", name: "Produtos" },
   { path: "publicacao", name: "Publicação" },
   { path: "vendas", name: "Vendas" },
@@ -28,6 +28,8 @@ export function App() {
           <Route path="fontes" element={<SourcesPage />} />
           <Route path="fontes/:sourceId" element={<SourceDetailPage />} />
           <Route path="claims" element={<ClaimsPage />} />
+          <Route path="pesquisa" element={<PesquisaPage />} />
+          <Route path="conteudo" element={<ConteudoPage />} />
           {placeholderRoutes.map(({ path, name }) => (
             <Route key={path} path={path} element={<PlaceholderPage name={name} />} />
           ))}

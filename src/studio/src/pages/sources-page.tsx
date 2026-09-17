@@ -95,6 +95,10 @@ export function SourcesPage() {
             <Link className="font-semibold text-[var(--primary)] hover:underline" to="/claims">
               Revisão de evidências
             </Link>
+            {" · "}
+            <Link className="font-semibold text-[var(--primary)] hover:underline" to="/pesquisa">
+              Pesquisa
+            </Link>
           </p>
         </div>
         <Button type="button" onClick={() => setShowCreate((value) => !value)}>
