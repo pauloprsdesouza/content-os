@@ -6,10 +6,17 @@ Status: Active · Phase: 2 · Last updated: 2026-09-17
 
 Research jobs, author/reviewer agents, model gateway aliases, ContentUnit/ContentVersion lifecycle, Operation monitoring, human gates.
 
+## Local MVP (shipped)
+
+- Domain: `ResearchJob` (+ findings), `ContentUnit`/`ContentVersion`, minimal `Operation`.
+- API: research-jobs, content-units/versions (If-Match gates), operations, internal snapshot-by-hash tool API.
+- Messaging: RabbitMQ CloudEvents (`contentos.ai` / `backend.ai.results`); worker stub when `CONTENT_OS_AI_STUB=true` or no LiteLLM key.
+- Studio: Pesquisa + Conteúdo wired (pt-BR).
+
 ## Invariants
 
 - Worker reports attempt results; never owns durable workflow state.
-- Only Wolverine schedules durable retries.
+- Only Wolverine schedules durable retries (MVP: RabbitMQ consumer applies results idempotently).
 - ContentVersion: Draft → … → PendingHumanApproval → Approved|ChangesRequested; approved immutable.
 - Model output validated; never applied as raw domain command.
 

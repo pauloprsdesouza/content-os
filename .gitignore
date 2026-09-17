@@ -34,3 +34,4 @@ htmlcov/
 # Blobs / data
 ops/data/
 **/blobs/
+**/.contentos-ai-ledger.jsonl
