@@ -2,18 +2,18 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router"
 import { Toaster } from "sonner"
 
 import { AppShell } from "@/components/app-shell"
+import { CatalogoPage } from "@/pages/catalogo-page"
 import { ClaimsPage } from "@/pages/claims-page"
 import { ConteudoPage } from "@/pages/conteudo-page"
 import { DashboardPage } from "@/pages/dashboard-page"
 import { LoginPage } from "@/pages/login-page"
 import { PesquisaPage } from "@/pages/pesquisa-page"
 import { PlaceholderPage } from "@/pages/placeholder-page"
+import { PublicacaoPage } from "@/pages/publicacao-page"
 import { SourceDetailPage } from "@/pages/source-detail-page"
 import { SourcesPage } from "@/pages/sources-page"
 
 const placeholderRoutes = [
-  { path: "produtos", name: "Produtos" },
-  { path: "publicacao", name: "Publicação" },
   { path: "vendas", name: "Vendas" },
   { path: "resultados", name: "Resultados" },
 ]
@@ -30,6 +30,8 @@ export function App() {
           <Route path="claims" element={<ClaimsPage />} />
           <Route path="pesquisa" element={<PesquisaPage />} />
           <Route path="conteudo" element={<ConteudoPage />} />
+          <Route path="produtos" element={<CatalogoPage />} />
+          <Route path="publicacao" element={<PublicacaoPage />} />
           {placeholderRoutes.map(({ path, name }) => (
             <Route key={path} path={path} element={<PlaceholderPage name={name} />} />
           ))}
