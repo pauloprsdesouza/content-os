@@ -1,6 +1,6 @@
 # Feature — Phase 1 Knowledge loop
 
-Status: Active · Phase: 1 · Last updated: 2026-09-17
+Status: In progress (local E2E usable) · Phase: 1 · Last updated: 2026-09-17
 
 ## Outcome
 
@@ -15,8 +15,20 @@ Sources, immutable snapshots (blob + hash), extraction hooks, evidence, claims, 
 
 ## Key APIs
 
-`/sources`, `/snapshots`, `/claims/{id}`, approve/reject, impact endpoints.
+`GET/POST /api/v1/sources` · `GET /api/v1/sources/{id}` · `GET/POST /api/v1/sources/{id}/snapshots` · `GET /api/v1/claims` (pending queue) · `GET /api/v1/claims/{id}` · `POST .../approve|reject` (If-Match) · `POST /api/v1/claims` (create-for-review, local/demo).
+
+## Local ops
+
+1. Start Postgres (`ops/compose`) with `POSTGRES_PASSWORD` set.
+2. `dotnet run --project src/backend/ContentOS.Migrations`
+3. `dotnet run --project src/backend/ContentOS.Api --launch-profile http`
+4. `npm run dev` in `src/studio` (proxies `/api` → `:5231`)
+5. Login `admin@contentos.local` / `ChangeMe!Admin1`
 
 ## Test plan
 
-Domain transition tests; SSRF-safe ingest tests; review UI 412/409 states.
+Domain transition tests; review UI 409/412 states. SSRF-safe ingest and impact endpoints still deferred.
+
+## Remaining gaps
+
+Research AI jobs, impact endpoints, Orval client, MFA enforcement, source integrity tabs, automatic extraction.
