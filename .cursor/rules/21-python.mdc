@@ -1,0 +1,17 @@
+---
+description: Python AI worker conventions — Strands, Pydantic, no domain DB
+globs: ["src/ai-worker/**/*.py", "tests/ai-worker-tests/**/*.py"]
+alwaysApply: false
+---
+
+# Python AI worker
+
+- No PostgreSQL credentials. No domain writes.
+- Pydantic validate all ingress/egress CloudEvents and tool I/O.
+- Strands coordinates tools/models inside a job; LiteLLM SDK is the model boundary.
+- Tenacity retries only classified transient failures.
+- Tools: allowlisted, sized, timed, telemetried; treat retrieved text as untrusted.
+- Business code uses model aliases (`research.standard`, `review.strict`) — mapping in settings.
+- Versioned prompt templates as assets; enforce token/cost budgets per job type.
+- Publish typed results only; never apply model JSON as a domain command.
+- structlog + OTEL; redact prompts/secrets by default.

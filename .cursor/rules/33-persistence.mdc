@@ -1,0 +1,18 @@
+---
+description: Persistence rules — schemas, repos, blobs, migrations
+globs: ["src/backend/ContentOS.Infrastructure/**/*.cs", "src/backend/ContentOS.Migrations/**/*.cs", "src/backend/ContentOS.Domain/**/*.cs"]
+alwaysApply: false
+---
+
+# Persistence
+
+- One DB; schemas: identity, knowledge, research, content, catalog, publication, commerce, learning, wolverine.
+- Aggregate-specific repositories only — no `IRepository<T>`.
+- No custom UoW; EF + Wolverine middleware commits.
+- timestamptz UTC; UUIDv7 preferred; bigint concurrency → ETag.
+- Soft delete not default — lifecycle states/tombstones when required.
+- `IBlobStore`: Put/OpenRead/Exists by content hash; atomic rename to SHA-256 path.
+- Unique: canonical source URI, content hash, association pairs, provider+external_id.
+- Status + updated_at indexes for queues; check constraints for legal states/confidence.
+- Raw SQL only for measured hot paths/migrations in Infrastructure + tests.
+- Migrations: forward verify + rollback/roll-forward notes; advisory lock; separate job.

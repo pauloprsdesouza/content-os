@@ -1,0 +1,37 @@
+---
+description: Global engineering rules for every Content OS change
+alwaysApply: true
+---
+
+# Core engineering
+
+## Change discipline
+
+- Understand outcome, module, and existing conventions before editing.
+- Smallest coherent change that meets acceptance criteria.
+- Do not invent APIs, entities, events, config keys, or rules without marking assumptions.
+- Search for existing patterns before new abstractions.
+- When unverified, say exactly what remains unverified.
+
+## No hardcoding
+
+- No magic URLs, connection strings, keys, queue/exchange names, model IDs, timeouts, roles, or env hosts in domain/application code.
+- Use typed Options, named policies, value objects, SharedKernel primitives.
+- Secrets never in source, messages, prompts, traces, or logs.
+
+## Clean code
+
+- Domain vocabulary; one level of abstraction per method; early returns.
+- Comments explain *why*; no drive-by refactors.
+- Immutable command/result records; explicit results for expected business failures.
+
+## Pragmatic SOLID
+
+Apply when it removes real coupling or enables a real substitution. Do not manufacture interfaces/layers “for SOLID”.
+
+## Defaults
+
+- UTC inside; locale only at UI edge.
+- Timeout every external call; retry only transient + idempotent.
+- Tests at lowest useful level for new behavior.
+- GoF only with named variation (see ADR-0012).

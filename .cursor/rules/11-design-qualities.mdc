@@ -1,0 +1,29 @@
+---
+description: Componentization, DRY-with-judgment, maintainability, extensibility, scalability
+alwaysApply: true
+---
+
+# Design qualities
+
+## Componentization
+
+Small cohesive components (slices, adapters, ports) with clear ownership and small public surface. Prefer compose-over-invent. Align with modules; no shared domain dumping ground.
+
+## DRY with judgment
+
+- Deduplicate technical primitives (resilience, telemetry, problem codes, Options).
+- Do not share product domain across modules via “convenient” base types.
+- Rule of three / wrong abstraction: copy-adapt beats premature shared domain.
+- Delete pass-through wrappers and dead parallel implementations when touched.
+
+## Maintainability
+
+Feature folders match business language. One change ≈ one vertical slice. Document only hard-to-recover decisions (ADR/feature SDD).
+
+## Extensibility
+
+Add handler/strategy/adapter/slice — not boolean flags in shared code. Contracts evolve additively within v1.
+
+## Scalability
+
+Stay modular monolith until independent scale, failure isolation, data ownership, release cadence, or compliance forces a split. Measure before caching/sharding.

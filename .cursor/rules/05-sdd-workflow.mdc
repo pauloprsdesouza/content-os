@@ -1,0 +1,19 @@
+---
+description: Lean SDD workflow — plan from .cursor/sdd, keep full SDD for deep detail only
+alwaysApply: true
+---
+
+# Lean SDD workflow
+
+Before non-trivial work:
+
+1. Read `.cursor/sdd/system.md`, affected `services/*`, relevant `decisions/*`, and active `features/*`.
+2. Prefer this pack over `Content-OS-SDD-v1.0.md` unless you need endpoint inventory, full state machines, or unresolved nuance.
+3. Inspect existing code/tests — repo is SoT for current implementation.
+4. Produce a short plan: outcome, module/slice, files, data/API/event/security/obs/migration impact, tests, deploy notes.
+5. Resolve conflicts: user instruction → accepted feature/ADR → system/service SDD → repo conventions → generic pattern.
+6. Implement one end-to-end slice before optional abstractions.
+7. Update the feature SDD when contracts/invariants/events/data/ops decisions change.
+8. New ADR only for cross-cutting or hard-to-reverse decisions.
+
+Do not treat SDD as a substitute for reading code. Do not silently change an accepted ADR.

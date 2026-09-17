@@ -1,0 +1,24 @@
+---
+description: Observability, security, AI safety, audit
+alwaysApply: false
+---
+
+# Observability and security
+
+## Observability
+
+- OTEL spans: HTTP, Wolverine, EF, RabbitMQ, Python, tools, models.
+- W3C trace context on HTTP + CloudEvents.
+- Structured logs: service, env, traceId, spanId, correlationId, operationId, messageId, errorCode.
+- Metrics: latency/error, queue depth/age, outbox age, AI duration/tokens/cost, time-in-state.
+- Audit events = immutable business/security ledger (not logs).
+- Never log source bodies, full prompts, tokens, cookies, secrets, or PII by default.
+
+## Security
+
+- Cookie auth + antiforgery; MFA for Admin.
+- Named capability policies; least privilege.
+- Ingest: allow schemes; DNS safe; deny private/metadata; revalidate redirects; size/type limits.
+- Webhook signature verify when available; always reconcile.
+- AI tools allowlisted; no general shell/DB/arbitrary network.
+- Human approval required for claims, final content, publication confirm.

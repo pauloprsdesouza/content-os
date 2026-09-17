@@ -1,0 +1,16 @@
+---
+description: Content Studio frontend — Figma SoT, Refine headless, shadcn, Orval
+globs: ["src/studio/**/*.{ts,tsx,css}"]
+alwaysApply: false
+---
+
+# Content Studio
+
+- Visual SoT: Figma `ws9h9RE7NGrE9hVbwqRnxY`. Implement from design; do not invent alternate layouts.
+- React 19 + Vite + TS strict. Refine **headless**. shadcn/ui new-york + Tailwind v4. No MUI.
+- Orval-generated client/hooks only for platform HTTP — no hand-rolled fetch/Axios to `/api`.
+- RHF + Zod for forms; map 422 paths. Sonner for toasts; actionable errors stay on page.
+- Retain ETag → send `If-Match`. One `Idempotency-Key` per user intent across retries.
+- Dashboard totals from `/dashboard/summary` only. Commerce UI never labels webhook as confirmed sale.
+- pt-BR copy. Loading/empty/error/conflict/offline states per screen.
+- CSS variables = tokens; CVA for finite variants; Lucide icons.

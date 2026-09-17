@@ -1,0 +1,36 @@
+﻿# Build
+**/bin/
+**/obj/
+**/node_modules/
+**/dist/
+**/.vite/
+**/__pycache__/
+**/.venv/
+**/venv/
+*.user
+*.suo
+.vs/
+.idea/
+
+# Secrets / env
+.env
+.env.*
+!.env.example
+!.env.*.example
+appsettings.*.local.json
+**/secrets/
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+*.log
+
+# Test / coverage
+**/TestResults/
+**/coverage/
+.coverage
+htmlcov/
+
+# Blobs / data
+ops/data/
+**/blobs/

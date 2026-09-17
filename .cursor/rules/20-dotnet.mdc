@@ -1,0 +1,18 @@
+---
+description: .NET 10 Platform API conventions — Wolverine, EF, one type per file
+globs: ["src/backend/**/*.cs", "tests/**/*.cs"]
+alwaysApply: false
+---
+
+# .NET conventions
+
+- Nullable, file-scoped namespaces, warnings-as-errors.
+- **One hand-written type per `.cs` file**; filename = type name (ADR-0010).
+- Vertical slice folders under module: `Module/Feature/Action/{Command,Handler,Validator,Result}.cs`.
+- Api endpoints thin: map request → command → result → response; ProblemDetails for errors.
+- Wolverine for messaging + durability; do not reinvent mediator/outbox.
+- Mapperly at boundaries; domain entities never become response DTOs.
+- `TimeProvider` + injected ID generator; prefer UUIDv7; bigint version → ETag.
+- Typed Options validated at startup (`RabbitMqOptions`, `BlobStoreOptions`, `AiModelOptions`, `CommerceOptions`, `SecurityOptions`, …).
+- Named authorization policies for capabilities — not scattered role strings.
+- No `Database.Migrate()` in API startup.

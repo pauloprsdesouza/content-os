@@ -1,0 +1,20 @@
+---
+description: Vertical slice / CQRS shape for Application and Api features
+globs: ["src/backend/ContentOS.Application/**/*.cs", "src/backend/ContentOS.Api/**/*.cs"]
+alwaysApply: false
+---
+
+# Vertical slices
+
+```text
+Application/<Module>/<Feature>/<Action>/
+  <Action>Command.cs | Handler.cs | Validator.cs | Result.cs
+Api/<Module>/<Feature>/<Action>/
+  <Action>Endpoint.cs | Request.cs | Response.cs
+```
+
+- One handler per command/query.
+- Expected business failures → explicit Result; not exceptions.
+- No nested types in endpoint/handler files.
+- Queries: purpose-specific ports (e.g. `IClaimReviewQueueQuery`), not aggregates for lists.
+- Long work → 202 OperationAccepted; UI observes status URL.

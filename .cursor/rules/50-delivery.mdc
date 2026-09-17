@@ -1,0 +1,16 @@
+---
+description: Compose, containers, migrations, direct deploy (CI/CD deferred)
+globs: ["ops/**/*", "**/Dockerfile", "**/docker-compose*.yml", "**/docker-compose*.yaml", "**/.env.example"]
+alwaysApply: false
+---
+
+# Delivery
+
+- MVP: direct Docker Compose deploy to server — CI/CD deferred (ADR-0016).
+- Pin runtime versions; multi-stage builds; non-root; read-only FS where practical.
+- Config externalized and startup-validated; secrets never in images/git.
+- Order: migrate job (advisory lock) → API/Studio/worker.
+- Readiness vs liveness; graceful shutdown preserves safe redelivery.
+- Backup Postgres + blobs + encrypted config to another failure domain.
+- Homelab may certify; Hostinger VPS is MVP production target — same digest when promoting.
+- Do not merge `.env` secrets, build outputs, or personal test data.

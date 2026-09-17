@@ -1,0 +1,33 @@
+---
+description: Clean Architecture boundaries, modules, and pragmatic GoF for Content OS
+alwaysApply: true
+---
+
+# Architecture boundaries
+
+## Dependency rule
+
+- Domain → SharedKernel + BCL only.
+- Application → Domain + SharedKernel; owns use cases + ports.
+- Infrastructure → Application/Domain/Contracts; implements ports.
+- Api = composition root; no business policy.
+- Contracts = external HTTP/event schemas only.
+- Migrations = independent deployable; never from API startup.
+- Production code never references test projects.
+
+## Modules
+
+Identity, Knowledge, Research, Content, Catalog, Publication, Commerce, Learning.
+
+- Mutate only own aggregates/tables.
+- Cross-module writes via application command or integration event.
+- Cross-module reads via explicit query ports + purpose DTOs.
+- No shared entities across modules; cycles fail architecture tests.
+
+## Forbidden
+
+`IRepository<T>`, custom UoW, BaseService/CrudService/Manager/Utils dumps, provider SDKs in Domain/Application, status field assignment outside aggregate/policy.
+
+## GoF
+
+Strategy/Adapter/Factory/Builder/Observer/Decorator/CoR/Facade — only with named variation. Prefer Wolverine/.NET pipelines over reinvented mediators.
