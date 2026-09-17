@@ -113,6 +113,21 @@ public sealed class DevelopmentSeedHostedService(
             }
         }
 
+        claims = await userManager.GetClaimsAsync(user);
+        if (!claims.Any(claim =>
+                claim.Type == "capability"
+                && claim.Value == CapabilityNames.ContentApprove))
+        {
+            var addClaim = await userManager.AddClaimAsync(
+                user,
+                new System.Security.Claims.Claim("capability", CapabilityNames.ContentApprove));
+            if (!addClaim.Succeeded)
+            {
+                throw new InvalidOperationException(
+                    $"Failed to add content.approve claim: {FormatErrors(addClaim)}");
+            }
+        }
+
         logger.LogInformation("Development admin seed ensured for {Email}.", seed.AdminEmail);
         cancellationToken.ThrowIfCancellationRequested();
     }

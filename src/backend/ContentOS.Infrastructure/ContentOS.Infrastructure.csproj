@@ -20,6 +20,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="RabbitMQ.Client" />
     <PackageReference Include="WolverineFx" />
     <PackageReference Include="WolverineFx.Postgresql" />
   </ItemGroup>

@@ -1,5 +1,9 @@
+using ContentOS.Api.Content;
 using ContentOS.Api.Http;
+using ContentOS.Api.Internal;
 using ContentOS.Api.Knowledge;
+using ContentOS.Api.Operations;
+using ContentOS.Api.Research;
 using ContentOS.Contracts.Auth;
 using ContentOS.Contracts.Dashboard;
 using ContentOS.Domain.Identity;
@@ -48,6 +52,11 @@ builder.Services.AddAuthorization(options =>
         policy => policy
             .RequireAuthenticatedUser()
             .RequireClaim("capability", CapabilityNames.KnowledgeApprove));
+    options.AddPolicy(
+        CapabilityNames.ContentApprove,
+        policy => policy
+            .RequireAuthenticatedUser()
+            .RequireClaim("capability", CapabilityNames.ContentApprove));
 });
 builder.Services
     .AddOptions<CookieAuthenticationOptions>(IdentityConstants.ApplicationScheme)
@@ -90,6 +99,10 @@ app.MapOpenApi();
 app.MapWolverineEndpoints();
 app.MapHealthChecks("/health");
 app.MapKnowledgeEndpoints();
+app.MapResearchEndpoints();
+app.MapContentEndpoints();
+app.MapOperationsEndpoints();
+app.MapInternalEndpoints();
 
 var api = app.MapGroup("/api/v1");
 var auth = api.MapGroup("/auth");

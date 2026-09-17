@@ -23,6 +23,113 @@ namespace ContentOS.Migrations.Migrations
             NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "vector");
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("ContentOS.Domain.Content.ContentUnit", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Brief")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UpdatedAt")
+                        .HasDatabaseName("ix_content_units_updated_at");
+
+                    b.ToTable("content_units", "content");
+                });
+
+            modelBuilder.Entity("ContentOS.Domain.Content.ContentVersion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AgentReviewNotes")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("agent_review_notes");
+
+                    b.Property<string>("BodyMarkdown")
+                        .HasColumnType("text")
+                        .HasColumnName("body_markdown");
+
+                    b.Property<string>("ChangeRequestNotes")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("change_request_notes");
+
+                    b.Property<Guid>("ContentUnitId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("content_unit_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<Guid?>("OperationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("operation_id");
+
+                    b.Property<DateTimeOffset?>("ReviewedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("reviewed_at");
+
+                    b.Property<Guid?>("ReviewedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("reviewed_by_user_id");
+
+                    b.Property<int>("Revision")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContentUnitId", "Revision")
+                        .IsUnique()
+                        .HasDatabaseName("ix_content_versions_unit_revision");
+
+                    b.HasIndex("Status", "UpdatedAt")
+                        .HasDatabaseName("ix_content_versions_status_updated_at");
+
+                    b.ToTable("content_versions", "content");
+                });
+
             modelBuilder.Entity("ContentOS.Domain.Knowledge.Claim", b =>
                 {
                     b.Property<Guid>("Id")
@@ -223,6 +330,146 @@ namespace ContentOS.Migrations.Migrations
                         .HasDatabaseName("ix_source_snapshots_source_captured");
 
                     b.ToTable("source_snapshots", "knowledge");
+                });
+
+            modelBuilder.Entity("ContentOS.Domain.Operations.Operation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("error_message");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<Guid>("RequestedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("requested_by_user_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<Guid>("SubjectId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("subject_id");
+
+                    b.Property<string>("SubjectType")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("subject_type");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SubjectType", "SubjectId")
+                        .HasDatabaseName("ix_operations_subject");
+
+                    b.ToTable("operations", "identity");
+                });
+
+            modelBuilder.Entity("ContentOS.Domain.Research.ResearchFinding", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Confidence")
+                        .HasPrecision(5, 4)
+                        .HasColumnType("numeric(5,4)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("ResearchJobId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("research_job_id");
+
+                    b.Property<string>("Statement")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ResearchJobId")
+                        .HasDatabaseName("ix_research_findings_job_id");
+
+                    b.ToTable("research_findings", "research");
+                });
+
+            modelBuilder.Entity("ContentOS.Domain.Research.ResearchJob", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("AttemptCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("attempt_count");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("FailureReason")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("failure_reason");
+
+                    b.Property<Guid?>("OperationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("operation_id");
+
+                    b.Property<Guid>("RequestedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("requested_by_user_id");
+
+                    b.Property<string>("ScopeNotes")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("scope_notes");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("Topic")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Status", "UpdatedAt")
+                        .HasDatabaseName("ix_research_jobs_status_updated_at");
+
+                    b.ToTable("research_jobs", "research");
                 });
 
             modelBuilder.Entity("ContentOS.Infrastructure.Identity.ApplicationUser", b =>
@@ -429,6 +676,15 @@ namespace ContentOS.Migrations.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("ContentOS.Domain.Research.ResearchFinding", b =>
+                {
+                    b.HasOne("ContentOS.Domain.Research.ResearchJob", null)
+                        .WithMany("Findings")
+                        .HasForeignKey("ResearchJobId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole<System.Guid>", null)
@@ -483,6 +739,11 @@ namespace ContentOS.Migrations.Migrations
             modelBuilder.Entity("ContentOS.Domain.Knowledge.Claim", b =>
                 {
                     b.Navigation("EvidenceLinks");
+                });
+
+            modelBuilder.Entity("ContentOS.Domain.Research.ResearchJob", b =>
+                {
+                    b.Navigation("Findings");
                 });
 #pragma warning restore 612, 618
         }

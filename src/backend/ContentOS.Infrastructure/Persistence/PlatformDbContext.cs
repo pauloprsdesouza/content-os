@@ -1,4 +1,7 @@
+using ContentOS.Domain.Content;
 using ContentOS.Domain.Knowledge;
+using ContentOS.Domain.Operations;
+using ContentOS.Domain.Research;
 using ContentOS.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -20,6 +23,15 @@ public sealed class PlatformDbContext(
 
     public DbSet<ClaimEvidenceLink> ClaimEvidenceLinks => Set<ClaimEvidenceLink>();
 
+    public DbSet<ResearchJob> ResearchJobs => Set<ResearchJob>();
+
+    public DbSet<ResearchFinding> ResearchFindings => Set<ResearchFinding>();
+
+    public DbSet<ContentUnit> ContentUnits => Set<ContentUnit>();
+
+    public DbSet<ContentVersion> ContentVersions => Set<ContentVersion>();
+
+    public DbSet<Operation> Operations => Set<Operation>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
