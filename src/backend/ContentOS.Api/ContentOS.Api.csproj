@@ -9,7 +9,9 @@
   <ItemGroup>
     <ProjectReference Include="..\ContentOS.Application\ContentOS.Application.csproj" />
     <ProjectReference Include="..\ContentOS.Contracts\ContentOS.Contracts.csproj" />
+    <ProjectReference Include="..\ContentOS.Domain\ContentOS.Domain.csproj" />
     <ProjectReference Include="..\ContentOS.Infrastructure\ContentOS.Infrastructure.csproj" />
+    <ProjectReference Include="..\ContentOS.SharedKernel\ContentOS.SharedKernel.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,5 +1,8 @@
+using ContentOS.Api.Http;
+using ContentOS.Api.Knowledge;
 using ContentOS.Contracts.Auth;
 using ContentOS.Contracts.Dashboard;
+using ContentOS.Domain.Identity;
 using ContentOS.Infrastructure;
 using ContentOS.Infrastructure.Identity;
 using ContentOS.Infrastructure.Options;
@@ -29,22 +32,33 @@ builder.Services.AddAntiforgery(options =>
 {
     options.Cookie.HttpOnly = true;
     options.Cookie.SameSite = SameSiteMode.Strict;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.SecurePolicy = builder.Environment.IsDevelopment()
+        ? CookieSecurePolicy.SameAsRequest
+        : CookieSecurePolicy.Always;
     options.HeaderName = "X-CSRF-TOKEN";
 });
 builder.Services.AddContentOSInfrastructure(builder.Configuration);
 builder.Services
     .AddAuthentication(IdentityConstants.ApplicationScheme)
     .AddIdentityCookies();
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy(
+        CapabilityNames.KnowledgeApprove,
+        policy => policy
+            .RequireAuthenticatedUser()
+            .RequireClaim("capability", CapabilityNames.KnowledgeApprove));
+});
 builder.Services
     .AddOptions<CookieAuthenticationOptions>(IdentityConstants.ApplicationScheme)
-    .Configure<IOptions<SecurityOptions>>((cookie, securityOptions) =>
+    .Configure<IOptions<SecurityOptions>, IHostEnvironment>((cookie, securityOptions, environment) =>
     {
         cookie.Cookie.Name = securityOptions.Value.CookieName;
         cookie.Cookie.HttpOnly = true;
         cookie.Cookie.SameSite = SameSiteMode.Strict;
-        cookie.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        cookie.Cookie.SecurePolicy = environment.IsDevelopment()
+            ? CookieSecurePolicy.SameAsRequest
+            : CookieSecurePolicy.Always;
         cookie.ExpireTimeSpan = securityOptions.Value.SessionLifetime;
         cookie.SlidingExpiration = true;
         cookie.Events.OnRedirectToLogin = context =>
@@ -63,7 +77,11 @@ var app = builder.Build();
 
 app.UseExceptionHandler();
 app.UseSerilogRequestLogging();
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
+
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseAntiforgery();
@@ -71,6 +89,7 @@ app.UseAntiforgery();
 app.MapOpenApi();
 app.MapWolverineEndpoints();
 app.MapHealthChecks("/health");
+app.MapKnowledgeEndpoints();
 
 var api = app.MapGroup("/api/v1");
 var auth = api.MapGroup("/auth");
@@ -113,7 +132,7 @@ auth.MapPost(
                     statusCode: StatusCodes.Status401Unauthorized,
                     title: "Invalid credentials");
         })
-    .WithMetadata(new RequireAntiforgeryTokenAttribute());
+    .WithMetadata(RequireRequestAntiforgery.Instance);
 
 auth.MapPost(
         "/logout",
@@ -123,7 +142,7 @@ auth.MapPost(
             return Results.NoContent();
         })
     .RequireAuthorization()
-    .WithMetadata(new RequireAntiforgeryTokenAttribute());
+    .WithMetadata(RequireRequestAntiforgery.Instance);
 
 api.MapGet(
     "/dashboard/summary",

@@ -47,6 +47,9 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddOptions<SecurityOptions>()
             .Bind(configuration.GetSection(SecurityOptions.SectionName));
 
+        services.AddOptions<DevelopmentSeedOptions>()
+            .Bind(configuration.GetSection(DevelopmentSeedOptions.SectionName));
+
         services.AddDbContext<PlatformDbContext>((serviceProvider, options) =>
         {
             var connectionString = serviceProvider
@@ -88,6 +91,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<ApproveClaimHandler>();
         services.AddScoped<RejectClaimHandler>();
         services.AddScoped<CreateClaimForReviewHandler>();
+        services.AddHostedService<DevelopmentSeedHostedService>();
 
         return services;
     }
