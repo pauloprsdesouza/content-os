@@ -1,0 +1,24 @@
+:root {
+  --font-ui: "DM Sans", system-ui, sans-serif;
+  --font-brand: "Fraunces", Georgia, serif;
+
+  --ink: #0c1720;
+  --ink-soft: #24333d;
+  --muted: #64747d;
+  --muted-light: #93a0a7;
+  --canvas: #f3f7f7;
+  --surface: rgba(255, 255, 255, 0.82);
+  --surface-strong: #ffffff;
+  --surface-dark: #0c1720;
+  --line: rgba(21, 50, 59, 0.12);
+  --accent: #36d6bd;
+  --accent-strong: #19bda6;
+  --accent-ink: #062e2a;
+  --warning: #e6a74f;
+  --danger: #d85f5f;
+
+  --radius-sm: 0.65rem;
+  --radius-md: 0.9rem;
+  --radius-lg: 1.25rem;
+  --shadow-card: 0 18px 50px rgba(25, 55, 64, 0.08);
+}

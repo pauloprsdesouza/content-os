@@ -1,0 +1,59 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap");
+@import "tailwindcss";
+@import "./tokens.css";
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--canvas);
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  color: var(--ink);
+  font-family: var(--font-ui);
+  background:
+    radial-gradient(circle at 76% 8%, rgba(54, 214, 189, 0.13), transparent 27rem),
+    radial-gradient(circle at 32% 95%, rgba(92, 138, 157, 0.09), transparent 30rem),
+    var(--canvas);
+}
+
+button,
+input {
+  font: inherit;
+}
+
+::selection {
+  color: var(--accent-ink);
+  background: var(--accent);
+}
+
+.brand-wordmark {
+  font-family: var(--font-brand);
+}
+
+.dot-grid {
+  background-image: radial-gradient(rgba(36, 51, 61, 0.16) 0.7px, transparent 0.7px);
+  background-size: 14px 14px;
+}
+
+@media (max-width: 900px) {
+  .app-sidebar {
+    position: static;
+    width: 100%;
+    height: auto;
+  }
+
+  .app-frame {
+    display: block;
+  }
+
+  .app-nav {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

@@ -1,0 +1,46 @@
+asyncapi: 3.0.0
+info:
+  title: Content OS Events
+  version: 0.0.0
+  description: Minimal Phase 0 event contract stub.
+defaultContentType: application/cloudevents+json
+channels:
+  aiJobs:
+    address: contentos.ai.jobs
+    messages:
+      aiJobRequested:
+        $ref: "#/components/messages/AiJobRequested"
+operations:
+  requestAiJob:
+    action: send
+    channel:
+      $ref: "#/channels/aiJobs"
+    messages:
+      - $ref: "#/channels/aiJobs/messages/aiJobRequested"
+components:
+  messages:
+    AiJobRequested:
+      name: AiJobRequested
+      title: AI job requested
+      summary: Placeholder CloudEvent envelope for a future typed AI job.
+      payload:
+        type: object
+        additionalProperties: false
+        required:
+          - specversion
+          - id
+          - source
+          - type
+        properties:
+          specversion:
+            type: string
+            const: "1.0"
+          id:
+            type: string
+            format: uuid
+          source:
+            type: string
+            format: uri-reference
+          type:
+            type: string
+            const: com.contentos.ai.job.requested.v1

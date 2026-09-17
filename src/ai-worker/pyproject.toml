@@ -1,0 +1,21 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "content-os-ai-worker"
+version = "0.1.0"
+description = "Content OS AI worker Phase 0 bootstrap"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+  "pydantic>=2.9,<3",
+  "pydantic-settings>=2.5,<3",
+  "structlog>=24.4,<26",
+]
+
+[project.scripts]
+content-os-ai-worker = "ai_worker.bootstrap.app:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["ai_worker"]
