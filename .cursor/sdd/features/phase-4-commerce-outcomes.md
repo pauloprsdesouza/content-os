@@ -1,10 +1,12 @@
 # Feature — Phase 4 Commerce and outcomes
 
-Status: Active · Phase: 4 · Last updated: 2026-09-17
+Status: Implemented (MVP) · Phase: 4 · Last updated: 2026-09-17
 
 ## Outcome
 
 Kiwify webhook inbox, reconciliation runs, purchases, learners, enrollments, capstones, evaluations, outcome summary.
+
+Studio: Vendas (list + reconcile) and Resultados (backend summary cards).
 
 ## Invariants
 

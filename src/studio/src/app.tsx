@@ -8,15 +8,11 @@ import { ConteudoPage } from "@/pages/conteudo-page"
 import { DashboardPage } from "@/pages/dashboard-page"
 import { LoginPage } from "@/pages/login-page"
 import { PesquisaPage } from "@/pages/pesquisa-page"
-import { PlaceholderPage } from "@/pages/placeholder-page"
 import { PublicacaoPage } from "@/pages/publicacao-page"
+import { ResultadosPage } from "@/pages/resultados-page"
 import { SourceDetailPage } from "@/pages/source-detail-page"
 import { SourcesPage } from "@/pages/sources-page"
-
-const placeholderRoutes = [
-  { path: "vendas", name: "Vendas" },
-  { path: "resultados", name: "Resultados" },
-]
+import { VendasPage } from "@/pages/vendas-page"
 
 export function App() {
   return (
@@ -32,9 +28,8 @@ export function App() {
           <Route path="conteudo" element={<ConteudoPage />} />
           <Route path="produtos" element={<CatalogoPage />} />
           <Route path="publicacao" element={<PublicacaoPage />} />
-          {placeholderRoutes.map(({ path, name }) => (
-            <Route key={path} path={path} element={<PlaceholderPage name={name} />} />
-          ))}
+          <Route path="vendas" element={<VendasPage />} />
+          <Route path="resultados" element={<ResultadosPage />} />
           <Route path="catalogo" element={<Navigate to="/produtos" replace />} />
           <Route path="comercio" element={<Navigate to="/vendas" replace />} />
           <Route path="admin" element={<Navigate to="/" replace />} />
