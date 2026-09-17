@@ -1,18 +1,85 @@
 import { Plus } from "lucide-react"
+import { FormEvent, useEffect, useState } from "react"
 import { Link } from "react-router"
+import { toast } from "sonner"
 
+import { EmptyState, ErrorState, LoadingState } from "@/components/page-states"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { ApiError } from "@/lib/api/client"
+import { createSource, listSources, type SourceListItem } from "@/lib/api/knowledge"
 
-const statusTabs = [
-  { label: "Todas", count: 0, active: true },
-  { label: "Aguardando", count: 0, active: false },
-  { label: "Aprovadas", count: 0, active: false },
-  { label: "Com falha", count: 0, active: false, danger: true },
-]
+function formatUpdatedAt(value: string) {
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(new Date(value))
+}
 
 export function SourcesPage() {
+  const [items, setItems] = useState<SourceListItem[]>([])
+  const [totalItems, setTotalItems] = useState(0)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [showCreate, setShowCreate] = useState(false)
+  const [creating, setCreating] = useState(false)
+
+  async function loadSources() {
+    setLoading(true)
+    setError(null)
+    try {
+      const page = await listSources()
+      setItems(page.items)
+      setTotalItems(page.totalItems)
+    } catch (requestError) {
+      if (requestError instanceof ApiError && requestError.status === 401) {
+        setError("Faça login para ver as fontes.")
+      } else {
+        setError(
+          requestError instanceof Error
+            ? requestError.message
+            : "Não foi possível carregar as fontes.",
+        )
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    void loadSources()
+  }, [])
+
+  async function handleCreate(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setCreating(true)
+    const form = new FormData(event.currentTarget)
+
+    try {
+      await createSource({
+        displayName: String(form.get("displayName") ?? ""),
+        location: String(form.get("location") ?? ""),
+        kind: String(form.get("kind") ?? "Web"),
+      })
+      toast.success("Fonte cadastrada")
+      setShowCreate(false)
+      event.currentTarget.reset()
+      await loadSources()
+    } catch (requestError) {
+      const message =
+        requestError instanceof ApiError && requestError.status === 409
+          ? "Já existe uma fonte com essa URI."
+          : requestError instanceof Error
+            ? requestError.message
+            : "Falha ao cadastrar fonte."
+      toast.error(message)
+    } finally {
+      setCreating(false)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -30,74 +97,110 @@ export function SourcesPage() {
             </Link>
           </p>
         </div>
-        <Button>
+        <Button type="button" onClick={() => setShowCreate((value) => !value)}>
           <Plus className="size-4" />
           Adicionar fonte
         </Button>
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        {statusTabs.map((tab) => (
-          <button
-            key={tab.label}
-            type="button"
-            className={`rounded-full px-3.5 py-1.5 text-xs font-semibold ${
-              tab.active
-                ? "bg-[var(--accent)] text-[var(--primary)]"
-                : tab.danger
-                  ? "bg-[var(--background)] text-[var(--destructive)]"
-                  : "bg-[var(--background)] text-[var(--muted-foreground)]"
-            }`}
-          >
-            {tab.label} {tab.count}
-          </button>
-        ))}
-      </div>
+      {showCreate && (
+        <Card>
+          <CardContent className="p-6">
+            <form className="grid gap-4 md:grid-cols-2" onSubmit={handleCreate}>
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="displayName">Nome</Label>
+                <Input id="displayName" name="displayName" required placeholder="Relatório anual" />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="location">URI canônica</Label>
+                <Input
+                  id="location"
+                  name="location"
+                  required
+                  placeholder="https://exemplo.com/documento"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="kind">Tipo</Label>
+                <select
+                  id="kind"
+                  name="kind"
+                  defaultValue="Web"
+                  className="h-12 w-full rounded-[10px] border border-[var(--border)] bg-[var(--card)] px-3 text-[13px]"
+                >
+                  <option value="Web">Web</option>
+                  <option value="Upload">Upload</option>
+                  <option value="Api">Api</option>
+                </select>
+              </div>
+              <div className="flex items-end gap-3">
+                <Button type="submit" disabled={creating}>
+                  {creating ? "Salvando…" : "Salvar fonte"}
+                </Button>
+                <Button type="button" variant="outline" onClick={() => setShowCreate(false)}>
+                  Cancelar
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      )}
 
-      <div className="flex flex-wrap gap-3">
-        <Input className="max-w-sm" placeholder="Buscar por título ou URL" />
-        <button
-          type="button"
-          className="h-12 rounded-[10px] border border-[var(--border)] bg-[var(--card)] px-3 text-[13px] text-[var(--muted-foreground)]"
-        >
-          Tipo: todos
-        </button>
-        <button
-          type="button"
-          className="h-12 rounded-[10px] border border-[var(--border)] bg-[var(--card)] px-3 text-[13px] text-[var(--muted-foreground)]"
-        >
-          Integridade: todos
-        </button>
-      </div>
+      {loading && <LoadingState label="Carregando fontes…" />}
+      {!loading && error && <ErrorState title="Não foi possível carregar" description={error} />}
+      {!loading && !error && items.length === 0 && (
+        <EmptyState
+          title="Nenhuma fonte cadastrada"
+          description="Adicione a primeira origem para iniciar o monitoramento e capturar snapshots."
+        />
+      )}
 
-      <Card>
-        <CardContent className="overflow-x-auto p-0">
-          <table className="w-full min-w-[720px] border-collapse text-left text-sm">
-            <thead>
-              <tr className="border-b border-[var(--border)] text-xs text-[var(--muted-foreground)]">
-                <th className="px-5 py-3 font-semibold">Fonte</th>
-                <th className="px-5 py-3 font-semibold">Tipo</th>
-                <th className="px-5 py-3 font-semibold">Integridade</th>
-                <th className="px-5 py-3 font-semibold">Atualização</th>
-                <th className="px-5 py-3 font-semibold">Status</th>
-                <th className="px-5 py-3 font-semibold" />
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td colSpan={6} className="px-5 py-16 text-center text-sm text-[var(--muted-foreground)]">
-                  Nenhuma fonte cadastrada ainda. Adicione a primeira origem para iniciar o
-                  monitoramento.
-                </td>
-              </tr>
-            </tbody>
-          </table>
-          <div className="flex items-center justify-between border-t border-[var(--border)] px-5 py-3 text-xs text-[var(--muted-foreground)]">
-            <span>0–0 de 0</span>
-            <span className="tracking-widest">‹ 1 ›</span>
-          </div>
-        </CardContent>
-      </Card>
+      {!loading && !error && items.length > 0 && (
+        <Card>
+          <CardContent className="overflow-x-auto p-0">
+            <table className="w-full min-w-[720px] border-collapse text-left text-sm">
+              <thead>
+                <tr className="border-b border-[var(--border)] text-xs text-[var(--muted-foreground)]">
+                  <th className="px-5 py-3 font-semibold">Fonte</th>
+                  <th className="px-5 py-3 font-semibold">Tipo</th>
+                  <th className="px-5 py-3 font-semibold">URI</th>
+                  <th className="px-5 py-3 font-semibold">Atualização</th>
+                  <th className="px-5 py-3 font-semibold" />
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((source) => (
+                  <tr key={source.id} className="border-b border-[var(--border)]">
+                    <td className="px-5 py-4 font-medium text-[var(--foreground)]">
+                      {source.displayName}
+                    </td>
+                    <td className="px-5 py-4 text-[var(--muted-foreground)]">{source.kind}</td>
+                    <td className="max-w-xs truncate px-5 py-4 text-[var(--muted-foreground)]">
+                      {source.canonicalUri}
+                    </td>
+                    <td className="px-5 py-4 text-[var(--muted-foreground)]">
+                      {formatUpdatedAt(source.updatedAt)}
+                    </td>
+                    <td className="px-5 py-4 text-right">
+                      <Link
+                        className="text-sm font-semibold text-[var(--primary)] hover:underline"
+                        to={`/fontes/${source.id}`}
+                      >
+                        Abrir
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div className="flex items-center justify-between border-t border-[var(--border)] px-5 py-3 text-xs text-[var(--muted-foreground)]">
+              <span>
+                1–{items.length} de {totalItems}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }

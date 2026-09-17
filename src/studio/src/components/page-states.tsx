@@ -1,4 +1,4 @@
-import { Inbox, LoaderCircle } from "lucide-react"
+import { Inbox, LoaderCircle, TriangleAlert } from "lucide-react"
 
 import { Card } from "@/components/ui/card"
 
@@ -25,6 +25,24 @@ export function EmptyState({
       </div>
       <h2 className="m-0 text-base font-semibold">{title}</h2>
       <p className="mb-0 mt-2 max-w-md text-sm leading-relaxed text-[var(--muted-foreground)]">
+        {description}
+      </p>
+    </Card>
+  )
+}
+
+export function ErrorState({
+  title,
+  description,
+}: {
+  title: string
+  description: string
+}) {
+  return (
+    <Card className="flex min-h-44 flex-col items-center justify-center gap-3 px-6 text-center">
+      <TriangleAlert className="size-5 text-[var(--destructive)]" />
+      <h2 className="m-0 text-base font-semibold text-[var(--foreground)]">{title}</h2>
+      <p className="mb-0 max-w-md text-sm leading-relaxed text-[var(--muted-foreground)]">
         {description}
       </p>
     </Card>

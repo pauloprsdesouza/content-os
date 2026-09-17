@@ -5,6 +5,7 @@ import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { apiRequest, clearCsrfToken } from "@/lib/api/client"
 
 export function LoginPage() {
   const navigate = useNavigate()
@@ -19,19 +20,15 @@ export function LoginPage() {
     const formData = new FormData(event.currentTarget)
 
     try {
-      const response = await fetch("/api/v1/auth/login", {
+      clearCsrfToken()
+      await apiRequest<void>("/api/v1/auth/login", {
         method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+        body: {
           email: formData.get("email"),
           password: formData.get("password"),
-        }),
+          rememberMe: false,
+        },
       })
-
-      if (!response.ok) {
-        throw new Error("Não foi possível entrar. Verifique seus dados e tente novamente.")
-      }
 
       toast.success("Sessão iniciada")
       navigate("/")
@@ -79,6 +76,9 @@ export function LoginPage() {
           <p className="mb-0 mt-2 text-sm text-[var(--muted-foreground)]">
             Acesse seu workspace do Content Studio.
           </p>
+          <p className="mb-0 mt-3 text-xs text-[var(--muted-foreground)]">
+            Demo local: admin@contentos.local / ChangeMe!Admin1
+          </p>
 
           <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
             <div className="space-y-2">
@@ -88,6 +88,7 @@ export function LoginPage() {
                 name="email"
                 type="email"
                 autoComplete="email"
+                defaultValue="admin@contentos.local"
                 placeholder="paulo@contentos.com"
                 required
               />
@@ -101,6 +102,7 @@ export function LoginPage() {
                 name="password"
                 type="password"
                 autoComplete="current-password"
+                defaultValue="ChangeMe!Admin1"
                 required
               />
               <div className="flex justify-end">

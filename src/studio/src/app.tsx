@@ -6,6 +6,7 @@ import { ClaimsPage } from "@/pages/claims-page"
 import { DashboardPage } from "@/pages/dashboard-page"
 import { LoginPage } from "@/pages/login-page"
 import { PlaceholderPage } from "@/pages/placeholder-page"
+import { SourceDetailPage } from "@/pages/source-detail-page"
 import { SourcesPage } from "@/pages/sources-page"
 
 const placeholderRoutes = [
@@ -25,6 +26,7 @@ export function App() {
         <Route element={<AppShell />}>
           <Route index element={<DashboardPage />} />
           <Route path="fontes" element={<SourcesPage />} />
+          <Route path="fontes/:sourceId" element={<SourceDetailPage />} />
           <Route path="claims" element={<ClaimsPage />} />
           {placeholderRoutes.map(({ path, name }) => (
             <Route key={path} path={path} element={<PlaceholderPage name={name} />} />
