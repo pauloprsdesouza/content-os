@@ -1,22 +1,43 @@
 # Content OS AI Worker
 
-Phase 0 bootstrap for the temporary AI job runner. It loads environment-backed
-settings and emits a structured idle log. It never receives database credentials
-and does not own domain state.
+Consumes `ai.research`, `ai.content.generate`, and `ai.content.review` CloudEvents
+from RabbitMQ, runs a stub or LiteLLM-backed agent path, and publishes typed
+result events. **No PostgreSQL credentials.**
 
-## Run locally
+## Stub mode (local E2E)
 
-```bash
+Stub mode is the default when `CONTENT_OS_AI_STUB=true` **or** when
+`CONTENT_OS_LITELLM_API_KEY` is unset.
+
+```powershell
+Set-Location src/ai-worker
 python -m venv .venv
-python -m pip install -e .
-python -m ai_worker.bootstrap.app
+.\.venv\Scripts\python -m pip install -e .
+$env:CONTENT_OS_AI_STUB = "true"
+$env:CONTENT_OS_RABBITMQ_URL = "amqp://contentos:change-me-local-only@127.0.0.1:5672/"
+$env:CONTENT_OS_API_BASE_URL = "http://localhost:5080"
+$env:CONTENT_OS_WORKER_API_KEY = "local-dev-worker-key"
+.\.venv\Scripts\python -m ai_worker.bootstrap.app
 ```
 
-Configuration uses the `CONTENT_OS_` prefix:
+Optional real model path:
 
-- `CONTENT_OS_RABBITMQ_URL` (default: `amqp://contentos:contentos@localhost:5672/`)
-- `CONTENT_OS_API_BASE_URL` (default: `http://localhost:5080`)
-- `CONTENT_OS_ENVIRONMENT` (default: `development`)
+```powershell
+$env:CONTENT_OS_AI_STUB = "false"
+$env:CONTENT_OS_LITELLM_API_KEY = "<key>"
+$env:CONTENT_OS_LITELLM_MODEL_ALIAS = "gpt-4o-mini"
+```
 
-`aio-pika`, Strands Agents, LiteLLM, HTTP tooling, consumers, and OpenTelemetry
-will be introduced with executable AI jobs in a later phase.
+## Messaging
+
+| Direction | Exchange | Routing / queue |
+|-----------|----------|-----------------|
+| Commands in | `contentos.ai` (topic) | `ai.research`, `ai.content.generate`, `ai.content.review` → queue `ai.worker.commands` |
+| Results out | `contentos.ai` | result types (`ai.research.completed`, …); API binds `backend.ai.results` to `ai.#` |
+
+Idempotency: append-only ledger file (default `.contentos-ai-ledger.jsonl`).
+
+## Internal Knowledge tool
+
+`GET /api/v1/internal/knowledge/snapshots/by-hash/{hash}` with header
+`X-ContentOS-Worker-Key` — metadata only, no DB access from the worker.

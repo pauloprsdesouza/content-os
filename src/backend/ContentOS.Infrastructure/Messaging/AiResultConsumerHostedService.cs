@@ -65,6 +65,22 @@ public sealed class AiResultConsumerHostedService(
             autoDelete: false,
             cancellationToken: stoppingToken);
 
+        if (!string.IsNullOrWhiteSpace(rabbit.AiRequestsExchange))
+        {
+            await channel.ExchangeDeclareAsync(
+                exchange: rabbit.AiRequestsExchange,
+                type: ExchangeType.Topic,
+                durable: true,
+                autoDelete: false,
+                cancellationToken: stoppingToken);
+
+            await channel.QueueBindAsync(
+                queue: rabbit.AiResultsQueue,
+                exchange: rabbit.AiRequestsExchange,
+                routingKey: "ai.#",
+                cancellationToken: stoppingToken);
+        }
+
         await channel.BasicQosAsync(0, 10, false, stoppingToken);
 
         var consumer = new AsyncEventingBasicConsumer(channel);

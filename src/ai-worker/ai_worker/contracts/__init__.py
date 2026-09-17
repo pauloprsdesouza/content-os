@@ -1,1 +1,1 @@
-"""Typed worker message contracts will live here."""
+"""Pydantic CloudEvent command/result contracts."""
