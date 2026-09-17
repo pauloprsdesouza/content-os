@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes } from "react-router"
+import { BrowserRouter, Navigate, Route, Routes } from "react-router"
 import { Toaster } from "sonner"
 
 import { AppShell } from "@/components/app-shell"
@@ -11,11 +11,10 @@ import { SourcesPage } from "@/pages/sources-page"
 const placeholderRoutes = [
   { path: "pesquisa", name: "Pesquisa" },
   { path: "conteudo", name: "Conteúdo" },
-  { path: "catalogo", name: "Catálogo" },
+  { path: "produtos", name: "Produtos" },
   { path: "publicacao", name: "Publicação" },
-  { path: "comercio", name: "Comércio" },
+  { path: "vendas", name: "Vendas" },
   { path: "resultados", name: "Resultados" },
-  { path: "admin", name: "Administração" },
 ]
 
 export function App() {
@@ -30,6 +29,9 @@ export function App() {
           {placeholderRoutes.map(({ path, name }) => (
             <Route key={path} path={path} element={<PlaceholderPage name={name} />} />
           ))}
+          <Route path="catalogo" element={<Navigate to="/produtos" replace />} />
+          <Route path="comercio" element={<Navigate to="/vendas" replace />} />
+          <Route path="admin" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>
       <Toaster richColors position="top-right" />

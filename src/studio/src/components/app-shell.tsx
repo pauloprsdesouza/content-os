@@ -1,126 +1,123 @@
 import {
-  BarChart3,
-  BookOpenCheck,
-  Boxes,
-  CircleUserRound,
-  FileSearch,
-  Gauge,
-  Library,
-  Megaphone,
-  PenLine,
-  Search,
+  CircleHelp,
   Settings2,
-  ShoppingBag,
-  Sparkles,
 } from "lucide-react"
 import { NavLink, Outlet, useLocation } from "react-router"
 
 import { cn } from "@/lib/utils"
 
 const navigation = [
-  { label: "Dashboard", href: "/", icon: Gauge },
-  { label: "Fontes", href: "/fontes", icon: Library },
-  { label: "Pesquisa", href: "/pesquisa", icon: FileSearch },
-  { label: "Claims", href: "/claims", icon: BookOpenCheck },
-  { label: "Conteúdo", href: "/conteudo", icon: PenLine },
-  { label: "Catálogo", href: "/catalogo", icon: Boxes },
-  { label: "Publicação", href: "/publicacao", icon: Megaphone },
-  { label: "Comércio", href: "/comercio", icon: ShoppingBag },
-  { label: "Resultados", href: "/resultados", icon: BarChart3 },
-  { label: "Admin", href: "/admin", icon: Settings2 },
+  { label: "Visão geral", href: "/", match: ["/"] },
+  {
+    label: "Conhecimento",
+    href: "/fontes",
+    match: ["/fontes", "/claims", "/pesquisa"],
+  },
+  { label: "Conteúdo", href: "/conteudo", match: ["/conteudo"] },
+  { label: "Produtos", href: "/produtos", match: ["/produtos"] },
+  { label: "Publicação", href: "/publicacao", match: ["/publicacao"] },
+  { label: "Vendas", href: "/vendas", match: ["/vendas"] },
+  { label: "Resultados", href: "/resultados", match: ["/resultados"] },
 ]
 
-const pageTitles: Record<string, string> = {
-  "/": "Visão geral",
-  "/fontes": "Fontes",
-  "/pesquisa": "Pesquisa",
-  "/claims": "Revisão de claims",
-  "/conteudo": "Conteúdo",
-  "/catalogo": "Catálogo",
-  "/publicacao": "Publicação",
-  "/comercio": "Comércio",
-  "/resultados": "Resultados",
-  "/admin": "Administração",
+function isActivePath(pathname: string, match: string[]) {
+  return match.some((path) =>
+    path === "/" ? pathname === "/" : pathname === path || pathname.startsWith(`${path}/`),
+  )
 }
 
 export function AppShell() {
   const location = useLocation()
 
   return (
-    <div className="app-frame min-h-screen lg:grid lg:grid-cols-[268px_1fr]">
-      <aside className="app-sidebar bg-[var(--surface-dark)] px-5 py-6 text-white lg:sticky lg:top-0 lg:h-screen">
-        <div className="mb-8 flex items-center gap-3 px-2">
-          <div className="grid size-10 place-items-center rounded-xl bg-[var(--accent)] text-[var(--accent-ink)]">
-            <Sparkles className="size-5" />
+    <div className="app-frame min-h-screen lg:grid lg:grid-cols-[var(--sidebar-width)_1fr]">
+      <aside className="app-sidebar flex flex-col bg-[var(--sidebar)] px-4 py-7 text-white lg:sticky lg:top-0 lg:h-screen">
+        <div className="mb-10 px-3">
+          <div className="brand-mark text-[15px] font-bold leading-none tracking-[0.02em]">
+            CONTENT
           </div>
-          <div>
-            <div className="brand-wordmark text-[1.65rem] font-bold leading-none tracking-[-0.04em]">
-              Content OS
-            </div>
-            <div className="mt-1 text-[0.62rem] font-semibold uppercase tracking-[0.2em] text-white/45">
-              Studio de operações
-            </div>
+          <div className="mt-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--info)]">
+            STUDIO
           </div>
         </div>
 
-        <nav className="app-nav space-y-1" aria-label="Navegação principal">
-          {navigation.map(({ label, href, icon: Icon }) => (
-            <NavLink
-              key={href}
-              to={href}
-              end={href === "/"}
-              className={({ isActive }) =>
-                cn(
-                  "group flex items-center gap-3 rounded-[var(--radius-sm)] px-3 py-2.5 text-sm font-medium text-white/55 transition",
-                  "hover:bg-white/[0.06] hover:text-white",
-                  isActive && "bg-white/[0.09] text-white shadow-[inset_3px_0_0_var(--accent)]",
-                )
-              }
-            >
-              <Icon className="size-[18px] text-white/40 transition group-hover:text-[var(--accent)]" />
-              {label}
-            </NavLink>
-          ))}
+        <nav className="app-nav flex-1 space-y-1" aria-label="Navegação principal">
+          {navigation.map(({ label, href, match }) => {
+            const active = isActivePath(location.pathname, match)
+            return (
+              <NavLink
+                key={href}
+                to={href}
+                end={href === "/"}
+                className={cn(
+                  "relative flex items-center gap-3 rounded-[var(--radius-md)] px-3 py-2.5 text-[13px] font-medium transition",
+                  active
+                    ? "bg-[var(--sidebar-active)] text-white"
+                    : "text-[var(--sidebar-foreground)] hover:bg-white/[0.04] hover:text-white",
+                )}
+              >
+                <span
+                  className={cn(
+                    "size-2 shrink-0 rounded-full",
+                    active ? "bg-[var(--info)]" : "bg-[var(--sidebar-muted)]/50",
+                  )}
+                  aria-hidden
+                />
+                {label}
+                {active && (
+                  <span className="absolute inset-y-2 left-0 w-0.5 rounded-full bg-[var(--info)]" />
+                )}
+              </NavLink>
+            )
+          })}
         </nav>
 
-        <div className="mt-8 rounded-[var(--radius-md)] border border-white/10 bg-white/[0.04] p-4">
-          <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[var(--accent)]">
-            <span className="size-1.5 rounded-full bg-[var(--accent)] shadow-[0_0_10px_var(--accent)]" />
-            Fase 0
+        <div className="mt-6 flex items-center gap-3 px-2 pt-4">
+          <div className="grid size-8 place-items-center rounded-full bg-[var(--sidebar-active)] text-[11px] font-semibold">
+            PR
           </div>
-          <p className="m-0 text-xs leading-relaxed text-white/45">
-            Fundação do produto e infraestrutura local.
-          </p>
+          <div className="min-w-0">
+            <p className="m-0 truncate text-xs font-semibold">Paulo Roberto</p>
+            <p className="m-0 text-[10px] text-[var(--sidebar-muted)]">Admin</p>
+          </div>
         </div>
       </aside>
 
       <div className="min-w-0">
-        <header className="flex h-[76px] items-center justify-between border-b border-[var(--line)] bg-white/45 px-6 backdrop-blur-xl md:px-10">
-          <div>
-            <p className="m-0 text-[0.68rem] font-bold uppercase tracking-[0.18em] text-[var(--muted)]">
-              Operações editoriais
-            </p>
-            <h1 className="m-0 mt-1 text-xl font-semibold tracking-[-0.025em]">
-              {pageTitles[location.pathname] ?? "Content OS"}
-            </h1>
-          </div>
-          <div className="flex items-center gap-3">
+        <header className="flex h-16 items-center justify-between gap-4 border-b border-[var(--border)] bg-[var(--topbar)] px-6 md:px-8">
+          <label className="flex min-w-0 flex-1 items-center gap-2 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-[13px] text-[var(--muted-foreground)] md:max-w-md">
+            <span aria-hidden>⌕</span>
+            <input
+              className="w-full border-0 bg-transparent text-[13px] text-[var(--foreground)] outline-none placeholder:text-[var(--muted-foreground)]"
+              placeholder="Buscar em todo o workspace"
+              type="search"
+              aria-label="Buscar em todo o workspace"
+            />
+          </label>
+          <div className="flex items-center gap-1 text-[var(--muted-foreground)]">
             <button
-              className="hidden size-9 place-items-center rounded-full border border-[var(--line)] bg-white/60 text-[var(--muted)] md:grid"
-              aria-label="Pesquisar"
+              type="button"
+              className="grid size-9 place-items-center rounded-[var(--radius-sm)] hover:bg-[var(--background)]"
+              aria-label="Ajuda"
             >
-              <Search className="size-4" />
+              <CircleHelp className="size-4" />
             </button>
-            <div className="flex items-center gap-3 rounded-full border border-[var(--line)] bg-white/70 py-1.5 pl-2 pr-4">
-              <CircleUserRound className="size-7 text-[var(--muted)]" />
-              <div className="hidden text-left sm:block">
-                <p className="m-0 text-xs font-semibold">Sessão local</p>
-                <p className="m-0 text-[0.65rem] text-[var(--muted)]">Administrador</p>
-              </div>
+            <button
+              type="button"
+              className="grid size-9 place-items-center rounded-[var(--radius-sm)] hover:bg-[var(--background)]"
+              aria-label="Configurações"
+            >
+              <Settings2 className="size-4" />
+            </button>
+            <div
+              className="ml-1 grid size-8 place-items-center rounded-full bg-[var(--accent)] text-[11px] font-semibold text-[var(--primary)]"
+              aria-hidden
+            >
+              ◉
             </div>
           </div>
         </header>
-        <main className="p-6 md:p-10">
+        <main className="p-6 md:px-8 md:py-7">
           <Outlet />
         </main>
       </div>
