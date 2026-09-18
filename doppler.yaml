@@ -1,5 +1,5 @@
-# Pins this directory to the Content OS local config (branch on epilogik-platform).
-# Override anytime: doppler setup  |  doppler run -p ... -c ...
+# Pins this directory to Content OS local (laptop → Homelab infra).
+# Override: doppler setup  |  doppler run -p content-os -c dev|prd
 setup:
-  project: epilogik-platform
-  config: local_contentos
+  project: content-os
+  config: local

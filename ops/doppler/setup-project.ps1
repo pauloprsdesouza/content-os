@@ -1,16 +1,11 @@
 #Requires -Version 7.0
 <#
 .SYNOPSIS
-  Create dedicated Doppler project content-os when workplace has a free project slot.
+  Ensure Doppler project content-os exists with local / dev / prd environments.
 #>
 $ErrorActionPreference = "Stop"
 
 $project = "content-os"
-$envs = @(
-    @{ Name = "Local"; Slug = "local" },
-    @{ Name = "Development"; Slug = "dev" },
-    @{ Name = "Production"; Slug = "prd" }
-)
 
 Write-Host "Checking for project '$project'..."
 $exists = $false
@@ -28,30 +23,27 @@ if (-not $exists) {
     Write-Host "Project already exists."
 }
 
-foreach ($e in $envs) {
-    $slug = $e.Slug
-    $name = $e.Name
-    $envExists = $false
+foreach ($pair in @(
+    @{ Name = "Local"; Slug = "local" },
+    @{ Name = "Development"; Slug = "dev" },
+    @{ Name = "Production"; Slug = "prd" }
+)) {
+    $slug = $pair.Slug
+    $name = $pair.Name
     try {
         doppler environments get $slug --project $project --json | Out-Null
-        $envExists = $true
-    } catch {
-        $envExists = $false
-    }
-    if (-not $envExists) {
-        Write-Host "Creating environment $slug ($name)..."
-        doppler environments create $slug --name $name --project $project
-    } else {
         Write-Host "Environment exists: $slug"
+    } catch {
+        Write-Host "Creating environment $slug ($name)..."
+        doppler environments create $name $slug --project $project
     }
 }
 
 Write-Host @"
 
-Next:
-  1. Copy secrets from epilogik-platform configs local_contentos / dev_contentos / prd_contentos
-     into content-os configs local / dev / prd (dashboard or doppler secrets download/set).
-  2. Update doppler.yaml setup.project to content-os and configs to local|dev|prd.
-  3. Optionally delete the *_contentos branch configs after verifying.
+Project ready. Pin this repo:
+  doppler setup --project content-os --config local
+
+Configs: local (laptop→homelab), dev (homelab host), prd (Hostinger).
 
 "@

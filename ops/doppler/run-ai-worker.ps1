@@ -4,8 +4,8 @@ $repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..\..")
 $workerRoot = Join-Path $repoRoot "src\ai-worker"
 Set-Location $workerRoot
 
-$project = if ($env:CONTENTOS_DOPPLER_PROJECT) { $env:CONTENTOS_DOPPLER_PROJECT } else { "epilogik-platform" }
-$config = if ($env:CONTENTOS_DOPPLER_CONFIG) { $env:CONTENTOS_DOPPLER_CONFIG } else { "local_contentos" }
+$project = if ($env:CONTENTOS_DOPPLER_PROJECT) { $env:CONTENTOS_DOPPLER_PROJECT } else { "content-os" }
+$config = if ($env:CONTENTOS_DOPPLER_CONFIG) { $env:CONTENTOS_DOPPLER_CONFIG } else { "local" }
 
 if (-not (Test-Path ".venv")) {
     python -m venv .venv
