@@ -1,16 +1,28 @@
 import { useState, type FormEvent } from "react"
-import { useNavigate } from "react-router"
+import { Navigate, useLocation, useNavigate } from "react-router"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { apiRequest, clearCsrfToken } from "@/lib/api/client"
+import { useAuth } from "@/lib/auth"
 
 export function LoginPage() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const { session, isLoading, refreshSession } = useAuth()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const from =
+    (location.state as { from?: string } | null)?.from &&
+    (location.state as { from?: string }).from !== "/login"
+      ? (location.state as { from: string }).from
+      : "/"
+
+  if (!isLoading && session?.isAuthenticated) {
+    return <Navigate to={from} replace />
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -30,8 +42,9 @@ export function LoginPage() {
         },
       })
 
+      await refreshSession()
       toast.success("Sessão iniciada")
-      navigate("/")
+      navigate(from, { replace: true })
     } catch (requestError) {
       setError(
         requestError instanceof Error
@@ -94,9 +107,7 @@ export function LoginPage() {
               />
             </div>
             <div className="space-y-2">
-              <div className="flex items-center justify-between gap-3">
-                <Label htmlFor="password">Senha</Label>
-              </div>
+              <Label htmlFor="password">Senha</Label>
               <Input
                 id="password"
                 name="password"
@@ -105,14 +116,6 @@ export function LoginPage() {
                 defaultValue="ChangeMe!Admin1"
                 required
               />
-              <div className="flex justify-end">
-                <button
-                  type="button"
-                  className="text-xs font-semibold text-[var(--primary)] hover:underline"
-                >
-                  Esqueceu a senha?
-                </button>
-              </div>
             </div>
 
             {error && (
@@ -125,18 +128,8 @@ export function LoginPage() {
               {isSubmitting ? "Entrando…" : "Entrar"}
             </Button>
 
-            <div className="flex items-center gap-3 py-1 text-xs text-[var(--muted-foreground)]">
-              <span className="h-px flex-1 bg-[var(--border)]" />
-              ou
-              <span className="h-px flex-1 bg-[var(--border)]" />
-            </div>
-
-            <Button className="w-full" type="button" variant="outline">
-              Continuar com Google
-            </Button>
-
             <p className="mb-0 pt-2 text-center text-[11px] text-[var(--muted-foreground)]">
-              Protegido por MFA e sessão segura via cookie.
+              Sessão segura via cookie SameSite.
             </p>
           </form>
         </div>

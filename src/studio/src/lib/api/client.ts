@@ -92,6 +92,13 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   }
 
   if (!response.ok) {
+    if (response.status === 401 && !path.includes("/auth/login") && !path.includes("/auth/session")) {
+      clearCsrfToken()
+      if (typeof window !== "undefined" && !window.location.pathname.startsWith("/login")) {
+        window.location.assign(`/login?from=${encodeURIComponent(window.location.pathname)}`)
+      }
+    }
+
     let problem: ApiProblem = { title: response.statusText, status: response.status }
     try {
       const payload = (await response.json()) as Record<string, unknown>

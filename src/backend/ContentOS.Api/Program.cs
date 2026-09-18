@@ -39,10 +39,11 @@ builder.Services.AddHealthChecks();
 builder.Services.AddAntiforgery(options =>
 {
     options.Cookie.HttpOnly = true;
-    options.Cookie.SameSite = SameSiteMode.Strict;
+    options.Cookie.SameSite = SameSiteMode.Lax;
     options.Cookie.SecurePolicy = builder.Environment.IsDevelopment()
         ? CookieSecurePolicy.SameAsRequest
         : CookieSecurePolicy.Always;
+    options.Cookie.Path = "/";
     options.HeaderName = "X-CSRF-TOKEN";
 });
 builder.Services.AddContentOSInfrastructure(builder.Configuration);
@@ -73,10 +74,11 @@ builder.Services
     {
         cookie.Cookie.Name = securityOptions.Value.CookieName;
         cookie.Cookie.HttpOnly = true;
-        cookie.Cookie.SameSite = SameSiteMode.Strict;
+        cookie.Cookie.SameSite = SameSiteMode.Lax;
         cookie.Cookie.SecurePolicy = environment.IsDevelopment()
             ? CookieSecurePolicy.SameAsRequest
             : CookieSecurePolicy.Always;
+        cookie.Cookie.Path = "/";
         cookie.ExpireTimeSpan = securityOptions.Value.SessionLifetime;
         cookie.SlidingExpiration = true;
         cookie.Events.OnRedirectToLogin = context =>
@@ -167,7 +169,7 @@ auth.MapPost(
             await signInManager.SignOutAsync();
             return Results.NoContent();
         })
-    .RequireAuthorization()
+    .AllowAnonymous()
     .WithMetadata(RequireRequestAntiforgery.Instance);
 
 api.MapGet(

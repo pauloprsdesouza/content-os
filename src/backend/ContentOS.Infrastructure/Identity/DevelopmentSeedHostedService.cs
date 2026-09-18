@@ -95,6 +95,23 @@ public sealed class DevelopmentSeedHostedService(
                     $"Failed to create demo admin: {FormatErrors(createResult)}");
             }
         }
+        else
+        {
+            // Keep local demo password aligned with DevelopmentSeed / Doppler on every boot.
+            var removePassword = await userManager.RemovePasswordAsync(user);
+            if (!removePassword.Succeeded && removePassword.Errors.All(e => e.Code != "PasswordNotSet"))
+            {
+                throw new InvalidOperationException(
+                    $"Failed to clear demo admin password: {FormatErrors(removePassword)}");
+            }
+
+            var addPassword = await userManager.AddPasswordAsync(user, seed.AdminPassword);
+            if (!addPassword.Succeeded)
+            {
+                throw new InvalidOperationException(
+                    $"Failed to set demo admin password: {FormatErrors(addPassword)}");
+            }
+        }
 
         if (!await userManager.IsInRoleAsync(user, adminRole))
         {

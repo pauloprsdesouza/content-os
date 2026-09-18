@@ -1,0 +1,11 @@
+{
+  "name": "Content Studio",
+  "short_name": "Content OS",
+  "description": "Content Studio — conhecimento confiável, conteúdo que gera resultado.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f7f8fc",
+  "theme_color": "#0b1020",
+  "lang": "pt-BR",
+  "icons": []
+}

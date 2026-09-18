@@ -1,9 +1,12 @@
 import {
   CircleHelp,
+  LogOut,
   Settings2,
 } from "lucide-react"
-import { NavLink, Outlet, useLocation } from "react-router"
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router"
+import { toast } from "sonner"
 
+import { useAuth } from "@/lib/auth"
 import { cn } from "@/lib/utils"
 
 const navigation = [
@@ -26,8 +29,28 @@ function isActivePath(pathname: string, match: string[]) {
   )
 }
 
+function initials(userName: string | null | undefined) {
+  if (!userName) {
+    return "CO"
+  }
+  const parts = userName.split(/[@.\s]+/).filter(Boolean)
+  return parts
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("")
+}
+
 export function AppShell() {
   const location = useLocation()
+  const navigate = useNavigate()
+  const { session, logout } = useAuth()
+  const displayName = session?.userName ?? "Operador"
+
+  async function handleLogout() {
+    await logout()
+    toast.success("Sessão encerrada")
+    navigate("/login", { replace: true })
+  }
 
   return (
     <div className="app-frame min-h-screen lg:grid lg:grid-cols-[var(--sidebar-width)_1fr]">
@@ -72,14 +95,24 @@ export function AppShell() {
           })}
         </nav>
 
-        <div className="mt-6 flex items-center gap-3 px-2 pt-4">
-          <div className="grid size-8 place-items-center rounded-full bg-[var(--sidebar-active)] text-[11px] font-semibold">
-            PR
+        <div className="mt-6 space-y-3 px-2 pt-4">
+          <div className="flex items-center gap-3">
+            <div className="grid size-8 place-items-center rounded-full bg-[var(--sidebar-active)] text-[11px] font-semibold">
+              {initials(session?.userName)}
+            </div>
+            <div className="min-w-0">
+              <p className="m-0 truncate text-xs font-semibold">{displayName}</p>
+              <p className="m-0 text-[10px] text-[var(--sidebar-muted)]">Admin</p>
+            </div>
           </div>
-          <div className="min-w-0">
-            <p className="m-0 truncate text-xs font-semibold">Paulo Roberto</p>
-            <p className="m-0 text-[10px] text-[var(--sidebar-muted)]">Admin</p>
-          </div>
+          <button
+            type="button"
+            onClick={() => void handleLogout()}
+            className="flex w-full items-center gap-2 rounded-[var(--radius-md)] px-2 py-2 text-left text-[12px] font-medium text-[var(--sidebar-foreground)] transition hover:bg-white/[0.06] hover:text-white"
+          >
+            <LogOut className="size-3.5 shrink-0" aria-hidden />
+            Sair
+          </button>
         </div>
       </aside>
 
@@ -109,12 +142,15 @@ export function AppShell() {
             >
               <Settings2 className="size-4" />
             </button>
-            <div
-              className="ml-1 grid size-8 place-items-center rounded-full bg-[var(--accent)] text-[11px] font-semibold text-[var(--primary)]"
-              aria-hidden
+            <button
+              type="button"
+              onClick={() => void handleLogout()}
+              className="ml-1 grid size-9 place-items-center rounded-[var(--radius-sm)] hover:bg-[var(--background)]"
+              aria-label="Sair"
+              title="Sair"
             >
-              ◉
-            </div>
+              <LogOut className="size-4" />
+            </button>
           </div>
         </header>
         <main className="p-6 md:px-8 md:py-7">
