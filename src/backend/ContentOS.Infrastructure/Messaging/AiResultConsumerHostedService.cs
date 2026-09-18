@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.Json;
 using ContentOS.Application.Content.ApplyGenerateResult;
 using ContentOS.Application.Content.ApplyReviewResult;
+using ContentOS.Application.Content.Topics;
 using ContentOS.Application.Messaging;
 using ContentOS.Application.Research.ApplyResult;
 using ContentOS.Infrastructure.Options;
@@ -285,6 +286,45 @@ public sealed class AiResultConsumerHostedService(
                     cancellationToken);
                 break;
             }
+            case AiMessageTypes.TopicLabelCompleted:
+            case AiMessageTypes.JobFailed when HasDiscovery(data) && !HasContentVersion(data):
+            {
+                var topics = new List<TopicLabelInput>();
+                if (data.TryGetProperty("topics", out var topicsNode) && topicsNode.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var item in topicsNode.EnumerateArray())
+                    {
+                        var workIds = new List<string>();
+                        if (item.TryGetProperty("workIds", out var idsNode) && idsNode.ValueKind == JsonValueKind.Array)
+                        {
+                            foreach (var workNode in idsNode.EnumerateArray())
+                            {
+                                var workId = workNode.GetString();
+                                if (!string.IsNullOrWhiteSpace(workId))
+                                {
+                                    workIds.Add(workId);
+                                }
+                            }
+                        }
+
+                        topics.Add(new TopicLabelInput(
+                            item.TryGetProperty("label", out var labelNode) ? labelNode.GetString() ?? string.Empty : string.Empty,
+                            item.TryGetProperty("rationale", out var rationaleNode) ? rationaleNode.GetString() : null,
+                            workIds));
+                    }
+                }
+
+                var handler = services.GetRequiredService<ApplyTopicLabelsHandler>();
+                await handler.HandleAsync(
+                    new ApplyTopicLabelsCommand(
+                        GetGuid(data, "discoveryId"),
+                        GetGuid(data, "operationId"),
+                        !string.Equals(type, AiMessageTypes.JobFailed, StringComparison.Ordinal),
+                        GetString(data, "errorMessage"),
+                        topics),
+                    cancellationToken);
+                break;
+            }
             case AiMessageTypes.JobFailed when data.TryGetProperty("contentVersionId", out _):
             {
                 var kind = GetString(data, "failedType");
@@ -321,6 +361,7 @@ public sealed class AiResultConsumerHostedService(
             case AiMessageTypes.Research:
             case AiMessageTypes.ContentGenerate:
             case AiMessageTypes.ContentReview:
+            case AiMessageTypes.TopicLabel:
                 return AiResultDisposition.Ack;
             default:
                 logger.LogWarning("Unhandled AI result type {Type}", type);
@@ -346,6 +387,14 @@ public sealed class AiResultConsumerHostedService(
             body: body,
             cancellationToken: cancellationToken);
     }
+
+    private static bool HasDiscovery(JsonElement data) =>
+        data.TryGetProperty("discoveryId", out var node)
+        && node.ValueKind == JsonValueKind.String
+        && Guid.TryParse(node.GetString(), out _);
+
+    private static bool HasContentVersion(JsonElement data) =>
+        data.TryGetProperty("contentVersionId", out var node) && node.ValueKind != JsonValueKind.Null;
 
     private static Guid GetGuid(JsonElement data, string name) =>
         data.TryGetProperty(name, out var node) && Guid.TryParse(node.GetString(), out var value)

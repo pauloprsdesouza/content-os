@@ -16,6 +16,8 @@ channels:
         $ref: "#/components/messages/ContentGenerateRequested"
       contentReviewRequested:
         $ref: "#/components/messages/ContentReviewRequested"
+      topicLabelRequested:
+        $ref: "#/components/messages/TopicLabelRequested"
 operations:
   publishAiCommand:
     action: send
@@ -25,6 +27,7 @@ operations:
       - $ref: "#/channels/aiCommands/messages/researchRequested"
       - $ref: "#/channels/aiCommands/messages/contentGenerateRequested"
       - $ref: "#/channels/aiCommands/messages/contentReviewRequested"
+      - $ref: "#/channels/aiCommands/messages/topicLabelRequested"
 components:
   messages:
     ResearchRequested:
@@ -39,3 +42,7 @@ components:
       name: ai.content.review
       payload:
         $ref: ./schemas/ai-content-review-requested.schema.json
+    TopicLabelRequested:
+      name: ai.topics.label
+      payload:
+        $ref: ./schemas/ai-topics-label-requested.schema.json

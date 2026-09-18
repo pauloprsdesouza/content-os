@@ -31,7 +31,10 @@ public static class CreateContentUnitEndpoint
                             request.Title,
                             request.Brief,
                             request.QueueGeneration,
-                            userId),
+                            userId,
+                            request.Format,
+                            request.CitationContentHashes,
+                            ProductId: request.ProductId),
                         cancellationToken);
 
                     if (!result.IsSuccess)
@@ -41,6 +44,13 @@ public static class CreateContentUnitEndpoint
                             "CONTENT_TITLE_REQUIRED" => Results.Problem(
                                 statusCode: StatusCodes.Status400BadRequest,
                                 title: "Title required",
+                                extensions: new Dictionary<string, object?>
+                                {
+                                    ["code"] = result.ErrorCode
+                                }),
+                            "CONTENT_FORMAT_UNKNOWN" => Results.Problem(
+                                statusCode: StatusCodes.Status400BadRequest,
+                                title: "Format required",
                                 extensions: new Dictionary<string, object?>
                                 {
                                     ["code"] = result.ErrorCode

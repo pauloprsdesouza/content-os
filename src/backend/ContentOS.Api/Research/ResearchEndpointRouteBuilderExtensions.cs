@@ -9,6 +9,7 @@ public static class ResearchEndpointRouteBuilderExtensions
         jobs.MapCreateResearchJob();
         jobs.MapGetResearchJob();
         jobs.MapGetResearchJobFindings();
+        jobs.MapDiscardResearchJob();
 
         return endpoints;
     }

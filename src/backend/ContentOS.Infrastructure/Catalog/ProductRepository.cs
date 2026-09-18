@@ -17,4 +17,6 @@ public sealed class ProductRepository(PlatformDbContext dbContext) : IProductRep
         dbContext.Set<Product>().AnyAsync(cancellationToken);
 
     public void Add(Product product) => dbContext.Set<Product>().Add(product);
+
+    public void Remove(Product product) => dbContext.Set<Product>().Remove(product);
 }

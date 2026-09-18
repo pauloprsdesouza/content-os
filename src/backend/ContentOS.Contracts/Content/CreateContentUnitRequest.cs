@@ -3,4 +3,7 @@ namespace ContentOS.Contracts.Content;
 public sealed record CreateContentUnitRequest(
     string Title,
     string? Brief,
-    bool QueueGeneration = true);
+    string Format,
+    bool QueueGeneration = true,
+    IReadOnlyList<string>? CitationContentHashes = null,
+    Guid? ProductId = null);

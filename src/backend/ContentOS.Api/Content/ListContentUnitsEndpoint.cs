@@ -12,6 +12,7 @@ public static class ListContentUnitsEndpoint
             "/",
             async (
                 [AsParameters] PaginationQuery pagination,
+                Guid? productId,
                 ListContentUnitsHandler handler,
                 CancellationToken cancellationToken) =>
             {
@@ -19,7 +20,7 @@ public static class ListContentUnitsEndpoint
                 var pageSize = Math.Clamp(pagination.PageSize, 1, 100);
 
                 var result = await handler.HandleAsync(
-                    new ListContentUnitsQuery(page, pageSize),
+                    new ListContentUnitsQuery(page, pageSize, productId),
                     cancellationToken);
 
                 var items = result.Page.Items
@@ -27,9 +28,11 @@ public static class ListContentUnitsEndpoint
                         item.Id,
                         item.Title,
                         item.Brief,
+                        item.Format,
                         item.LatestVersionId,
                         item.LatestVersionStatus,
-                        item.UpdatedAt))
+                        item.UpdatedAt,
+                        item.ProductId))
                     .ToArray();
 
                 return Results.Ok(

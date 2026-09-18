@@ -15,4 +15,14 @@ public sealed class ResearchJobRepository(PlatformDbContext dbContext) : IResear
             .FirstOrDefaultAsync(job => job.Id == researchJobId, cancellationToken);
 
     public void Add(ResearchJob job) => dbContext.Set<ResearchJob>().Add(job);
+
+    public async Task DeleteGraphAsync(Guid researchJobId, CancellationToken cancellationToken = default)
+    {
+        await dbContext.Set<ResearchFinding>()
+            .Where(finding => finding.ResearchJobId == researchJobId)
+            .ExecuteDeleteAsync(cancellationToken);
+        await dbContext.Set<ResearchJob>()
+            .Where(job => job.Id == researchJobId)
+            .ExecuteDeleteAsync(cancellationToken);
+    }
 }

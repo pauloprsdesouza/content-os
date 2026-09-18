@@ -12,7 +12,7 @@ export function HelpPage() {
       </section>
       <Card>
         <CardContent className="space-y-2 p-6 text-sm">
-          <p className="m-0">Revisão de evidências: atalhos A e R na fila de claims.</p>
+          <p className="m-0">Afirmações para revisar: atalhos A e R na fila.</p>
           <p className="m-0">Vendas: um pedido só confirma se a Kiwify devolver a compra paga.</p>
         </CardContent>
       </Card>

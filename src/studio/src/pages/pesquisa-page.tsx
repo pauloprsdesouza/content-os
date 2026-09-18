@@ -12,6 +12,7 @@ import { listSnapshots, listSources, type SnapshotItem, type SourceListItem } fr
 import { watchOperation } from "@/lib/api/operations"
 import {
   createResearchJob,
+  deleteResearchJob,
   getResearchJob,
   getResearchJobFindings,
   listResearchJobs,
@@ -48,7 +49,7 @@ export function PesquisaPage() {
     try {
       const page = await listResearchJobs()
       setJobs(page.items)
-      const nextId = preferId ?? selectedId ?? page.items[0]?.id ?? null
+      const nextId = preferId === undefined ? (selectedId ?? page.items[0]?.id ?? null) : preferId
       setSelectedId(nextId)
       if (nextId) {
         await loadDetail(nextId)
@@ -155,7 +156,8 @@ export function PesquisaPage() {
     event.preventDefault()
     setCreating(true)
     setOperationStatus(null)
-    const form = new FormData(event.currentTarget)
+    const formElement = event.currentTarget
+    const form = new FormData(formElement)
     const topic = String(form.get("topic") ?? "").trim()
     const scopeNotes = String(form.get("scopeNotes") ?? "").trim()
     const sourceSnapshotId = String(form.get("sourceSnapshotId") ?? "").trim()
@@ -173,7 +175,7 @@ export function PesquisaPage() {
       })
       toast.success("Pesquisa enfileirada")
       setOperationStatus("Accepted")
-      event.currentTarget.reset()
+      formElement.reset()
       await loadJobs(accepted.subjectId)
     } catch (requestError) {
       toast.error(
@@ -183,6 +185,24 @@ export function PesquisaPage() {
       )
     } finally {
       setCreating(false)
+    }
+  }
+
+  async function handleDeleteJob(job: ResearchJobListItem) {
+    if (!window.confirm(`Apagar a pesquisa “${job.topic}”? Pesquisas com afirmações para revisar não podem ser apagadas.`)) {
+      return
+    }
+    try {
+      await deleteResearchJob(job.id)
+      toast.success("Pesquisa apagada.")
+      if (selectedId === job.id) {
+        setSelectedId(null)
+        setDetail(null)
+        setFindings([])
+      }
+      await loadJobs(selectedId === job.id ? null : selectedId)
+    } catch (requestError) {
+      toast.error(requestError instanceof Error ? requestError.message : "Não foi possível apagar a pesquisa.")
     }
   }
 
@@ -197,7 +217,7 @@ export function PesquisaPage() {
           <p className="mb-0 mt-2 text-sm text-[var(--muted-foreground)]">
             Crie jobs de pesquisa e acompanhe o status da operação até findings.
             <Link className="ml-2 font-semibold text-[var(--primary)] hover:underline" to="/claims">
-              Revisar claims
+              Afirmações para revisar
             </Link>
           </p>
         </div>
@@ -278,24 +298,29 @@ export function PesquisaPage() {
           <Card>
             <CardContent className="space-y-2 pt-4">
               {jobs.map((job) => (
-                <button
+                <div
                   key={job.id}
-                  type="button"
-                  className={`block w-full rounded-[var(--radius-md)] px-3 py-2 text-left text-sm transition ${
-                    selectedId === job.id
-                      ? "bg-[var(--accent)] text-[var(--foreground)]"
-                      : "hover:bg-[var(--muted)]"
+                  className={`flex items-start gap-2 rounded-[var(--radius-md)] px-2 py-1 ${
+                    selectedId === job.id ? "bg-[var(--accent)]" : ""
                   }`}
-                  onClick={() => {
-                    setSelectedId(job.id)
-                    void loadDetail(job.id)
-                  }}
                 >
-                  <div className="font-medium">{job.topic}</div>
-                  <div className="text-xs text-[var(--muted-foreground)]">
-                    {job.status} · {formatWhen(job.updatedAt)}
-                  </div>
-                </button>
+                  <button
+                    type="button"
+                    className="min-w-0 flex-1 border-0 bg-transparent px-1 py-1 text-left text-sm"
+                    onClick={() => {
+                      setSelectedId(job.id)
+                      void loadDetail(job.id)
+                    }}
+                  >
+                    <div className="font-medium">{job.topic}</div>
+                    <div className="text-xs text-[var(--muted-foreground)]">
+                      {job.status} · {formatWhen(job.updatedAt)}
+                    </div>
+                  </button>
+                  <Button type="button" size="sm" variant="ghost" onClick={() => void handleDeleteJob(job)}>
+                    Excluir
+                  </Button>
+                </div>
               ))}
             </CardContent>
           </Card>
@@ -320,7 +345,9 @@ export function PesquisaPage() {
                     <h3 className="m-0 text-sm font-semibold">Findings</h3>
                     {findings.length === 0 ? (
                       <p className="mb-0 mt-2 text-sm text-[var(--muted-foreground)]">
-                        Ainda sem findings — aguarde o worker.
+                        {detail.status === "Failed" || detail.status === "Cancelled"
+                          ? "Nenhum finding foi produzido."
+                          : "Ainda sem findings — aguarde o worker."}
                       </p>
                     ) : (
                       <ul className="mt-2 space-y-2 pl-0">

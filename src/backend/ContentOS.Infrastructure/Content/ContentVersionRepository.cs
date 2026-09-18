@@ -25,4 +25,18 @@ public sealed class ContentVersionRepository(PlatformDbContext dbContext) : ICon
     }
 
     public void Add(ContentVersion version) => dbContext.Set<ContentVersion>().Add(version);
+
+    public async Task<IReadOnlyList<Guid>> ListIdsByUnitAsync(
+        Guid contentUnitId,
+        CancellationToken cancellationToken = default) =>
+        await dbContext.Set<ContentVersion>()
+            .AsNoTracking()
+            .Where(version => version.ContentUnitId == contentUnitId)
+            .Select(version => version.Id)
+            .ToListAsync(cancellationToken);
+
+    public Task DeleteByUnitAsync(Guid contentUnitId, CancellationToken cancellationToken = default) =>
+        dbContext.Set<ContentVersion>()
+            .Where(version => version.ContentUnitId == contentUnitId)
+            .ExecuteDeleteAsync(cancellationToken);
 }

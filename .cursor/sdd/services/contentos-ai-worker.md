@@ -16,7 +16,7 @@ Temporary job execution: research, content generate/review, document normalize. 
 
 ## Access
 
-Knowledge via restricted internal API tools with workload identity. Blob open by authorized hash only.
+Knowledge via restricted internal API tools with workload identity. Blob open by authorized hash only. Model calls go through the LiteLLM SDK. Local Doppler points `CONTENT_OS_LITELLM_API_BASE` at the Homelab gateway (`:4000`); `CONTENT_OS_AI_STUB=true` keeps the deterministic path.
 
 ## Packages
 

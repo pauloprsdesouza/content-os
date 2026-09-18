@@ -16,4 +16,8 @@
   <ItemGroup>
     <Using Include="Xunit" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Fixtures\readable.pdf" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Fixtures\openalex-works.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>

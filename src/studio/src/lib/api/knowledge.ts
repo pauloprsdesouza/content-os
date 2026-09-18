@@ -57,6 +57,10 @@ export type ClaimDetail = {
   evidence: ClaimEvidence[]
 }
 
+export function deleteSource(sourceId: string) {
+  return apiRequest<void>(`/api/v1/sources/${sourceId}`, { method: "DELETE" })
+}
+
 export function listSources(page = 1, pageSize = 25) {
   return apiRequest<PageResponse<SourceListItem>>(
     `/api/v1/sources?page=${page}&pageSize=${pageSize}`,

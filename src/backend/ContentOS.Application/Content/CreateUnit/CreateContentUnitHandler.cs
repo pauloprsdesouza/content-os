@@ -1,3 +1,5 @@
+using ContentOS.Application.Content.Formats;
+using ContentOS.Application.Content.Generation;
 using ContentOS.Application.Content.Ports;
 using ContentOS.Application.Messaging;
 using ContentOS.Application.Operations.Ports;
@@ -13,6 +15,7 @@ public sealed class CreateContentUnitHandler(
     IContentVersionRepository versions,
     IOperationRepository operations,
     IAiCommandPublisher aiCommands,
+    ContentFormatStrategyCatalog formats,
     IIdGenerator ids,
     TimeProvider clock,
     IChangeCommitter changes)
@@ -26,16 +29,39 @@ public sealed class CreateContentUnitHandler(
             return CreateContentUnitResult.Invalid("CONTENT_TITLE_REQUIRED");
         }
 
+        if (!ContentFormat.TryParse(command.Format, out var format))
+        {
+            return CreateContentUnitResult.Invalid("CONTENT_FORMAT_UNKNOWN");
+        }
+
+        var strategy = formats.Find(format);
+        if (strategy is null)
+        {
+            return CreateContentUnitResult.Invalid("CONTENT_FORMAT_UNKNOWN");
+        }
+
         var now = clock.GetUtcNow();
         var unitId = ids.NewId();
         var versionId = ids.NewId();
 
-        var unit = ContentUnit.Create(
-            unitId,
-            command.Title,
-            command.Brief,
-            command.CreatedByUserId,
-            now);
+        ContentUnit unit;
+        try
+        {
+            unit = ContentUnit.Create(
+                unitId,
+                command.Title,
+                command.Brief,
+                format,
+                command.CitationContentHashes,
+                command.TopicDiscoveryId,
+                command.ProductId,
+                command.CreatedByUserId,
+                now);
+        }
+        catch (ArgumentException)
+        {
+            return CreateContentUnitResult.Invalid("CONTENT_CITATION_INVALID");
+        }
         var version = ContentVersion.CreateDraft(
             versionId,
             unitId,
@@ -76,14 +102,16 @@ public sealed class CreateContentUnitHandler(
                     CorrelationId: operationId.Value.ToString("N"),
                     IdempotencyKey: $"content-generate:{versionId}:v{version.Version}",
                     SchemaVersion: "1",
-                    Data: new
-                    {
-                        contentUnitId = unitId,
-                        contentVersionId = versionId,
-                        operationId,
-                        title = unit.Title,
-                        brief = unit.Brief
-                    }),
+                    Data: new ContentGenerationBrief(
+                        unitId,
+                        versionId,
+                        operationId.Value,
+                        unit.Title,
+                        unit.Brief,
+                        unit.Format.Code,
+                        strategy.BuildMold(),
+                        unit.ListCitationHashes(),
+                        false)),
                 cancellationToken);
         }
 

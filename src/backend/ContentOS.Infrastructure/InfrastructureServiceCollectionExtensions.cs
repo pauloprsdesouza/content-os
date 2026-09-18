@@ -1,4 +1,6 @@
 using ContentOS.Application.Blobs;
+using ContentOS.Application.Catalog.CreateProduct;
+using ContentOS.Application.Catalog.DeleteProduct;
 using ContentOS.Application.Catalog.GetEdition;
 using ContentOS.Application.Catalog.ListProducts;
 using ContentOS.Application.Catalog.Ports;
@@ -12,11 +14,17 @@ using ContentOS.Application.Content.Approve;
 using ContentOS.Application.Content.ApplyGenerateResult;
 using ContentOS.Application.Content.ApplyReviewResult;
 using ContentOS.Application.Content.CreateUnit;
+using ContentOS.Application.Content.DiscardSeries;
+using ContentOS.Application.Content.DiscardUnit;
+using ContentOS.Application.Content.Formats;
 using ContentOS.Application.Content.GetVersion;
 using ContentOS.Application.Content.ListUnits;
+using ContentOS.Application.Content.Literature;
 using ContentOS.Application.Content.Ports;
 using ContentOS.Application.Content.RequestChanges;
 using ContentOS.Application.Content.RequestReview;
+using ContentOS.Application.Content.Series;
+using ContentOS.Application.Content.Topics;
 using ContentOS.Application.Content.UpdateVersion;
 using ContentOS.Application.Knowledge.Capture;
 using ContentOS.Application.Knowledge.Claims.Approve;
@@ -25,6 +33,7 @@ using ContentOS.Application.Knowledge.Claims.GetClaim;
 using ContentOS.Application.Knowledge.Claims.GetReviewQueue;
 using ContentOS.Application.Knowledge.Claims.Promote;
 using ContentOS.Application.Knowledge.Claims.Reject;
+using ContentOS.Application.Knowledge.DiscardSource;
 using ContentOS.Application.Knowledge.Ports;
 using ContentOS.Application.Knowledge.Snapshots.Create;
 using ContentOS.Application.Knowledge.Snapshots.GetSnapshots;
@@ -47,6 +56,7 @@ using ContentOS.Application.Publication.GetPackage;
 using ContentOS.Application.Publication.Ports;
 using ContentOS.Application.Research.ApplyResult;
 using ContentOS.Application.Research.Create;
+using ContentOS.Application.Research.DiscardJob;
 using ContentOS.Application.Research.Get;
 using ContentOS.Application.Research.List;
 using ContentOS.Application.Research.Ports;
@@ -60,6 +70,7 @@ using ContentOS.Infrastructure.Dashboard;
 using ContentOS.Infrastructure.Identity;
 using ContentOS.Infrastructure.Knowledge;
 using ContentOS.Infrastructure.Learning;
+using ContentOS.Infrastructure.Literature;
 using ContentOS.Infrastructure.Messaging;
 using ContentOS.Infrastructure.Operations;
 using ContentOS.Infrastructure.Options;
@@ -102,10 +113,27 @@ public static class InfrastructureServiceCollectionExtensions
             .Validate(options => options.TimeoutSeconds is >= 1 and <= 60)
             .Validate(options => options.MaxBytes is >= 1024 and <= 5_000_000)
             .ValidateOnStart();
+        services.AddOptions<OpenAlexOptions>()
+            .Bind(configuration.GetSection(OpenAlexOptions.SectionName))
+            .Validate(options => Uri.TryCreate(options.BaseUrl, UriKind.Absolute, out _))
+            .Validate(options => options.TimeoutSeconds is >= 1 and <= 60)
+            .Validate(options => options.MaxWorks is >= 1 and <= 50)
+            .ValidateOnStart();
 
         services.AddOptions<DevelopmentSeedOptions>()
             .Bind(configuration.GetSection(DevelopmentSeedOptions.SectionName));
 
+        services.AddHttpClient(OpenAlexLiteratureSearch.HttpClientName, (sp, client) =>
+        {
+            var openAlex = sp.GetRequiredService<IOptions<OpenAlexOptions>>().Value;
+            client.BaseAddress = new Uri(openAlex.BaseUrl.TrimEnd('/') + "/");
+            client.Timeout = TimeSpan.FromSeconds(openAlex.TimeoutSeconds);
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("ContentOS-Literature/1");
+        });
+        services.AddScoped<IScholarlyLiterature>(sp =>
+            new OpenAlexLiteratureSearch(
+                sp.GetRequiredService<IHttpClientFactory>().CreateClient(OpenAlexLiteratureSearch.HttpClientName),
+                sp.GetRequiredService<IOptions<OpenAlexOptions>>().Value));
         services.AddHttpClient(WebPageSourceCapture.HttpClientName, client =>
         {
             client.Timeout = TimeSpan.FromSeconds(60);
@@ -168,6 +196,9 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IResearchJobRepository, ResearchJobRepository>();
         services.AddScoped<IResearchJobsQuery, ResearchJobsQuery>();
         services.AddScoped<IContentUnitRepository, ContentUnitRepository>();
+        services.AddScoped<ITopicDiscoveryRepository, TopicDiscoveryRepository>();
+        services.AddScoped<IEditorialSeriesRepository, EditorialSeriesRepository>();
+        services.AddScoped<ICadenceScheduler, WolverineCadenceScheduler>();
         services.AddScoped<IContentVersionRepository, ContentVersionRepository>();
         services.AddScoped<IContentUnitsQuery, ContentUnitsQuery>();
         services.AddScoped<IProductRepository, ProductRepository>();
@@ -203,6 +234,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<ISourceCapture, UploadedFileSourceCapture>();
         services.AddScoped<CaptureSourceSnapshotHandler>();
         services.AddScoped<CreateSourceHandler>();
+        services.AddScoped<DiscardSourceHandler>();
         services.AddScoped<GetSourcesHandler>();
         services.AddScoped<GetSourceHandler>();
         services.AddScoped<CreateSnapshotHandler>();
@@ -213,10 +245,20 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<RejectClaimHandler>();
         services.AddScoped<CreateClaimForReviewHandler>();
         services.AddScoped<CreateResearchJobHandler>();
+        services.AddScoped<DiscardResearchJobHandler>();
         services.AddScoped<GetResearchJobHandler>();
         services.AddScoped<ListResearchJobsHandler>();
         services.AddScoped<ApplyResearchResultHandler>();
+        services.AddSingleton<IContentFormatStrategy, NewsletterFormatStrategy>();
+        services.AddSingleton<IContentFormatStrategy, PostFormatStrategy>();
+        services.AddSingleton<IContentFormatStrategy, LessonFormatStrategy>();
+        services.AddSingleton<IContentFormatStrategy, EbookFormatStrategy>();
+        services.AddSingleton<IContentFormatStrategy, ArticleFormatStrategy>();
+        services.AddSingleton<ContentFormatStrategyCatalog>();
         services.AddScoped<CreateContentUnitHandler>();
+        services.AddScoped<DiscardContentUnitHandler>();
+        services.AddScoped<DiscardEditorialSeriesHandler>();
+        services.AddScoped<IContentPlacementQuery, ContentPlacementQuery>();
         services.AddScoped<ListContentUnitsHandler>();
         services.AddScoped<GetContentVersionHandler>();
         services.AddScoped<UpdateContentVersionHandler>();
@@ -225,7 +267,15 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<RequestContentChangesHandler>();
         services.AddScoped<ApplyContentGenerateResultHandler>();
         services.AddScoped<ApplyContentReviewResultHandler>();
+        services.AddScoped<StartTopicDiscoveryHandler>();
+        services.AddScoped<ApplyTopicLabelsHandler>();
+        services.AddScoped<SelectDiscoveredTopicsHandler>();
+        services.AddScoped<CreateEditorialSeriesHandler>();
+        services.AddScoped<RunSeriesCollectionHandler>();
         services.AddScoped<ListProductsHandler>();
+        services.AddScoped<CreateProductHandler>();
+        services.AddScoped<DeleteProductHandler>();
+        services.AddScoped<IProductUsageQuery, ProductUsageQuery>();
         services.AddScoped<GetEditionHandler>();
         services.AddScoped<ReplaceCurriculumHandler>();
         services.AddScoped<CreatePublicationPackageHandler>();

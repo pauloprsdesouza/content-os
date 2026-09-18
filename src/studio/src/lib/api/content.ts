@@ -5,9 +5,11 @@ export type ContentUnitListItem = {
   id: string
   title: string
   brief: string | null
+  format: string
   latestVersionId: string | null
   latestVersionStatus: string | null
   updatedAt: string
+  productId: string | null
 }
 
 export type ContentVersionDetail = {
@@ -26,16 +28,24 @@ export type ContentVersionDetail = {
   updatedAt: string
 }
 
-export function listContentUnits(page = 1, pageSize = 25) {
+export function listContentUnits(page = 1, pageSize = 25, productId?: string) {
+  const product = productId ? `&productId=${productId}` : ""
   return apiRequest<PageResponse<ContentUnitListItem>>(
-    `/api/v1/content-units?page=${page}&pageSize=${pageSize}`,
+    `/api/v1/content-units?page=${page}&pageSize=${pageSize}${product}`,
   )
+}
+
+export function deleteContentUnit(contentUnitId: string) {
+  return apiRequest<void>(`/api/v1/content-units/${contentUnitId}`, { method: "DELETE" })
 }
 
 export function createContentUnit(input: {
   title: string
   brief?: string
+  format: string
   queueGeneration?: boolean
+  citationContentHashes?: string[]
+  productId?: string
 }) {
   return apiRequest<OperationAccepted | { id: string; versionId: string }>(
     "/api/v1/content-units",
@@ -44,7 +54,10 @@ export function createContentUnit(input: {
       body: {
         title: input.title,
         brief: input.brief ?? null,
+        format: input.format,
         queueGeneration: input.queueGeneration ?? true,
+        citationContentHashes: input.citationContentHashes ?? null,
+        productId: input.productId ?? null,
       },
       idempotencyKey: crypto.randomUUID(),
     },

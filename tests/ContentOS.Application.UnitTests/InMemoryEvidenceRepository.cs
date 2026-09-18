@@ -13,4 +13,9 @@ public sealed class InMemoryEvidenceRepository : IEvidenceRepository
         Task.FromResult<IReadOnlyList<Evidence>>(Items.Where(item => evidenceIds.Contains(item.Id)).ToList());
 
     public void Add(Evidence evidence) => Items.Add(evidence);
+
+    public Task<bool> AnyForSnapshotsAsync(
+        IReadOnlyCollection<Guid> snapshotIds,
+        CancellationToken cancellationToken = default) =>
+        Task.FromResult(snapshotIds.Count > 0 && Items.Any(item => snapshotIds.Contains(item.SnapshotId)));
 }

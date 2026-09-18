@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contentos.local/schemas/ai-topics-label-requested.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["specversion", "id", "source", "type", "time", "subject", "correlationid", "causationid", "idempotencykey", "schemaversion", "datacontenttype", "data"],
+  "properties": {
+    "specversion": { "const": "1.0" },
+    "id": { "type": "string", "minLength": 1 },
+    "source": { "const": "contentos.content" },
+    "type": { "const": "ai.topics.label" },
+    "time": { "type": "string", "format": "date-time" },
+    "subject": { "type": "string" },
+    "correlationid": { "type": "string" },
+    "causationid": { "type": "string" },
+    "idempotencykey": { "type": "string" },
+    "schemaversion": { "const": "1" },
+    "datacontenttype": { "const": "application/json" },
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["discoveryId", "operationId", "works"],
+      "properties": {
+        "discoveryId": { "type": "string" },
+        "operationId": { "type": "string" },
+        "works": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["workId", "title", "abstractText"],
+            "properties": {
+              "workId": { "type": "string" },
+              "title": { "type": "string" },
+              "year": { "type": ["integer", "null"] },
+              "topicName": { "type": ["string", "null"] },
+              "abstractText": { "type": "string" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

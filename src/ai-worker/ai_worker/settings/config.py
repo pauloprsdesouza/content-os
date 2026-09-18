@@ -18,6 +18,7 @@ class WorkerSettings(BaseSettings):
     log_level: str = "INFO"
     ai_stub: bool = True
     litellm_api_key: SecretStr | None = None
+    litellm_api_base: AnyHttpUrl | None = None
     litellm_model_alias: str = "contentos/author"
     requests_exchange: str = "contentos.ai"
     requests_queue: str = "ai.worker.commands"

@@ -9,4 +9,10 @@ public interface ISourceSnapshotRepository
         CancellationToken cancellationToken = default);
 
     void Add(SourceSnapshot snapshot);
+
+    Task<IReadOnlyList<Guid>> ListIdsBySourceAsync(
+        Guid sourceId,
+        CancellationToken cancellationToken = default);
+
+    Task DeleteBySourceAsync(Guid sourceId, CancellationToken cancellationToken = default);
 }

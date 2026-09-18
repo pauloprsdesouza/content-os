@@ -8,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ApiError } from "@/lib/api/client"
-import { captureSource, listSources, uploadSourceFile, type SourceListItem } from "@/lib/api/knowledge"
+import { captureSource, deleteSource, listSources, uploadSourceFile, type SourceListItem } from "@/lib/api/knowledge"
 
 function formatUpdatedAt(value: string) {
   return new Intl.DateTimeFormat("pt-BR", {
@@ -25,6 +25,19 @@ export function SourcesPage() {
   const [showCreate, setShowCreate] = useState(false)
   const [creating, setCreating] = useState(false)
   const [mode, setMode] = useState<"web" | "file" | "text">("web")
+  async function handleDelete(source: SourceListItem) {
+    if (!window.confirm(`Apagar “${source.displayName}”? Fontes já usadas como evidência não podem ser apagadas.`)) {
+      return
+    }
+    try {
+      await deleteSource(source.id)
+      toast.success("Fonte apagada.")
+      await loadSources()
+    } catch (requestError) {
+      toast.error(requestError instanceof Error ? requestError.message : "Não foi possível apagar a fonte.")
+    }
+  }
+
   const navigate = useNavigate()
 
   async function loadSources() {
@@ -56,7 +69,8 @@ export function SourcesPage() {
   async function handleCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setCreating(true)
-    const form = new FormData(event.currentTarget)
+    const formElement = event.currentTarget
+    const form = new FormData(formElement)
     const displayName = String(form.get("displayName") ?? "").trim()
 
     try {
@@ -71,7 +85,7 @@ export function SourcesPage() {
             })
       toast.success("Snapshot capturado")
       setShowCreate(false)
-      event.currentTarget.reset()
+      formElement.reset()
       await loadSources()
       navigate(`/pesquisa?source=${captured.sourceId}&snapshot=${captured.snapshotId}`)
     } catch (requestError) {
@@ -100,7 +114,7 @@ export function SourcesPage() {
           <p className="mb-0 mt-3 text-xs text-[var(--muted-foreground)]">
             Também em Conhecimento:{" "}
             <Link className="font-semibold text-[var(--primary)] hover:underline" to="/claims">
-              Revisão de evidências
+              Afirmações para revisar
             </Link>
             {" · "}
             <Link className="font-semibold text-[var(--primary)] hover:underline" to="/pesquisa">
@@ -224,12 +238,21 @@ export function SourcesPage() {
                       {formatUpdatedAt(source.updatedAt)}
                     </td>
                     <td className="px-5 py-4 text-right">
-                      <Link
-                        className="text-sm font-semibold text-[var(--primary)] hover:underline"
-                        to={`/fontes/${source.id}`}
-                      >
-                        Abrir
-                      </Link>
+                      <div className="flex justify-end gap-3">
+                        <Link
+                          className="text-sm font-semibold text-[var(--primary)] hover:underline"
+                          to={`/fontes/${source.id}`}
+                        >
+                          Abrir
+                        </Link>
+                        <button
+                          type="button"
+                          className="border-0 bg-transparent p-0 text-sm font-semibold text-[var(--destructive)]"
+                          onClick={() => void handleDelete(source)}
+                        >
+                          Excluir
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

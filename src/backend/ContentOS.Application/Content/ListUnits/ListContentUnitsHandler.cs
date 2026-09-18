@@ -10,7 +10,7 @@ public sealed class ListContentUnitsHandler(IContentUnitsQuery query)
     {
         var page = Math.Max(1, request.Page);
         var pageSize = Math.Clamp(request.PageSize, 1, 100);
-        var result = await query.GetPageAsync(page, pageSize, cancellationToken);
+        var result = await query.GetPageAsync(page, pageSize, request.ProductId, cancellationToken);
         return new ListContentUnitsResult(result);
     }
 }

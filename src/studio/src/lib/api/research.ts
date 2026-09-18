@@ -34,6 +34,10 @@ export type OperationAccepted = {
   subjectId: string | null
 }
 
+export function deleteResearchJob(researchJobId: string) {
+  return apiRequest<void>(`/api/v1/research-jobs/${researchJobId}`, { method: "DELETE" })
+}
+
 export function listResearchJobs(page = 1, pageSize = 25) {
   return apiRequest<PageResponse<ResearchJobListItem>>(
     `/api/v1/research-jobs?page=${page}&pageSize=${pageSize}`,

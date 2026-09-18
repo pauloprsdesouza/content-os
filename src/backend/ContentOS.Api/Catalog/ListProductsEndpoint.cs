@@ -24,7 +24,8 @@ public static class ListProductsEndpoint
                             item.Id,
                             item.Name,
                             item.Description,
-                            item.UpdatedAt))
+                            item.UpdatedAt,
+                            item.EditionId))
                         .ToArray();
 
                     return Results.Ok(

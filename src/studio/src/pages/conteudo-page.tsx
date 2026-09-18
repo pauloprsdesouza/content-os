@@ -1,6 +1,8 @@
-import { FormEvent, useEffect, useState } from "react"
+import { useEffect, useState } from "react"
 import { toast } from "sonner"
 
+import { NovoConteudoWizard } from "@/components/novo-conteudo-wizard"
+import { SeriesPanel } from "@/components/series-panel"
 import { EmptyState, ErrorState, LoadingState } from "@/components/page-states"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -9,7 +11,7 @@ import { Label } from "@/components/ui/label"
 import { ApiError } from "@/lib/api/client"
 import {
   approveContentVersion,
-  createContentUnit,
+  deleteContentUnit,
   getContentVersion,
   listContentUnits,
   requestContentChanges,
@@ -17,7 +19,9 @@ import {
   type ContentUnitListItem,
   type ContentVersionDetail,
 } from "@/lib/api/content"
+import { listProducts } from "@/lib/api/catalog"
 import { watchOperation } from "@/lib/api/operations"
+import { taskStatus } from "@/lib/task-status"
 
 function formatWhen(value: string) {
   return new Intl.DateTimeFormat("pt-BR", {
@@ -28,13 +32,13 @@ function formatWhen(value: string) {
 
 export function ConteudoPage() {
   const [units, setUnits] = useState<ContentUnitListItem[]>([])
+  const [productNames, setProductNames] = useState<Record<string, string>>({})
   const [selectedVersionId, setSelectedVersionId] = useState<string | null>(null)
   const [version, setVersion] = useState<ContentVersionDetail | null>(null)
   const [etag, setEtag] = useState<string | null>(null)
   const [notes, setNotes] = useState("")
   const [loading, setLoading] = useState(true)
   const [acting, setActing] = useState(false)
-  const [creating, setCreating] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [conflict, setConflict] = useState<string | null>(null)
 
@@ -42,13 +46,13 @@ export function ConteudoPage() {
     setLoading(true)
     setError(null)
     try {
-      const page = await listContentUnits()
+      const [page, products] = await Promise.all([listContentUnits(), listProducts()])
       setUnits(page.items)
+      setProductNames(Object.fromEntries(products.items.map((product) => [product.id, product.name])))
       const nextVersionId =
-        preferVersionId ??
-        selectedVersionId ??
-        page.items.find((unit) => unit.latestVersionId)?.latestVersionId ??
-        null
+        preferVersionId === undefined
+          ? (selectedVersionId ?? page.items.find((unit) => unit.latestVersionId)?.latestVersionId ?? null)
+          : preferVersionId
       setSelectedVersionId(nextVersionId)
       if (nextVersionId) {
         await loadVersion(nextVersionId)
@@ -62,7 +66,7 @@ export function ConteudoPage() {
           ? "Faça login para gerenciar conteúdo."
           : requestError instanceof Error
             ? requestError.message
-            : "Não foi possível carregar as unidades.",
+            : "Não foi possível carregar o conteúdo.",
       )
     } finally {
       setLoading(false)
@@ -127,39 +131,6 @@ export function ConteudoPage() {
     return () => controller.abort()
   }, [version?.id, version?.operationId, version?.status])
 
-  async function handleCreate(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    setCreating(true)
-    const form = new FormData(event.currentTarget)
-    const title = String(form.get("title") ?? "").trim()
-    const brief = String(form.get("brief") ?? "").trim()
-
-    try {
-      const response = await createContentUnit({
-        title,
-        brief: brief || undefined,
-        queueGeneration: true,
-      })
-
-      if ("operationId" in response) {
-        toast.success("Geração enfileirada")
-        await loadUnits()
-      } else {
-        toast.success("Unidade criada")
-        await loadUnits(response.versionId)
-      }
-      event.currentTarget.reset()
-    } catch (requestError) {
-      toast.error(
-        requestError instanceof Error
-          ? requestError.message
-          : "Não foi possível criar a unidade.",
-      )
-    } finally {
-      setCreating(false)
-    }
-  }
-
   async function handleRequestReview() {
     if (!version) {
       return
@@ -223,6 +194,23 @@ export function ConteudoPage() {
     )
   }
 
+  async function handleDeleteUnit(unit: ContentUnitListItem) {
+    if (!window.confirm(`Apagar “${unit.title}”? Se já estiver no currículo, a exclusão é recusada.`)) {
+      return
+    }
+    try {
+      await deleteContentUnit(unit.id)
+      toast.success("Conteúdo apagado.")
+      if (selectedVersionId === unit.latestVersionId) {
+        setSelectedVersionId(null)
+        setVersion(null)
+      }
+      await loadUnits(selectedVersionId === unit.latestVersionId ? null : selectedVersionId)
+    } catch (requestError) {
+      toast.error(requestError instanceof Error ? requestError.message : "Não foi possível apagar o conteúdo.")
+    }
+  }
+
   const canApprove = version?.status === "PendingHumanApproval"
 
   return (
@@ -231,29 +219,16 @@ export function ConteudoPage() {
         <p className="m-0 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted-foreground)]">
           Autoria
         </p>
-        <h1 className="m-0 mt-1 text-2xl font-semibold tracking-tight">Conteúdo</h1>
+        <h1 className="m-0 mt-1 text-2xl font-semibold tracking-tight">Novo conteúdo</h1>
         <p className="mb-0 mt-2 text-sm text-[var(--muted-foreground)]">
-          Unidades, versões e gate humano de aprovação.
+          Produto, formato e origem. O rascunho escreve sozinho. Revise aqui. O currículo do produto só recebe o que você aprovar.
         </p>
       </header>
 
       <Card>
-        <CardContent className="space-y-4 pt-6">
-          <form className="grid gap-4 md:grid-cols-[1fr_1fr_auto]" onSubmit={handleCreate}>
-            <div className="space-y-2">
-              <Label htmlFor="title">Título</Label>
-              <Input id="title" name="title" required placeholder="Ex.: Guia de provenance" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="brief">Brief (opcional)</Label>
-              <Input id="brief" name="brief" placeholder="Direção editorial" />
-            </div>
-            <div className="flex items-end">
-              <Button type="submit" disabled={creating}>
-                {creating ? "Gerando…" : "Nova unidade"}
-              </Button>
-            </div>
-          </form>
+        <CardContent className="space-y-6 pt-6">
+          <NovoConteudoWizard onCreated={async () => loadUnits()} />
+          <SeriesPanel onCreated={async () => loadUnits()} />
         </CardContent>
       </Card>
 
@@ -261,8 +236,8 @@ export function ConteudoPage() {
       {!loading && error && <ErrorState title="Erro ao carregar" description={error} />}
       {!loading && !error && units.length === 0 && (
         <EmptyState
-          title="Nenhuma unidade"
-          description="Crie uma unidade para o worker stub gerar um ContentVersion em markdown."
+          title="Nenhum conteúdo"
+          description="Comece pelo produto, depois o formato e a origem."
         />
       )}
 
@@ -271,28 +246,34 @@ export function ConteudoPage() {
           <Card>
             <CardContent className="space-y-2 pt-4">
               {units.map((unit) => (
-                <button
+                <div
                   key={unit.id}
-                  type="button"
-                  disabled={!unit.latestVersionId}
-                  className={`block w-full rounded-[var(--radius-md)] px-3 py-2 text-left text-sm transition ${
-                    selectedVersionId === unit.latestVersionId
-                      ? "bg-[var(--accent)]"
-                      : "hover:bg-[var(--muted)]"
+                  className={`flex items-start gap-2 rounded-[var(--radius-md)] px-2 py-1 ${
+                    selectedVersionId === unit.latestVersionId ? "bg-[var(--accent)]" : ""
                   }`}
-                  onClick={() => {
-                    if (!unit.latestVersionId) {
-                      return
-                    }
-                    setSelectedVersionId(unit.latestVersionId)
-                    void loadVersion(unit.latestVersionId)
-                  }}
                 >
-                  <div className="font-medium">{unit.title}</div>
-                  <div className="text-xs text-[var(--muted-foreground)]">
-                    {unit.latestVersionStatus ?? "sem versão"} · {formatWhen(unit.updatedAt)}
-                  </div>
-                </button>
+                  <button
+                    type="button"
+                    disabled={!unit.latestVersionId}
+                    className="min-w-0 flex-1 border-0 bg-transparent px-1 py-1 text-left text-sm"
+                    onClick={() => {
+                      if (!unit.latestVersionId) {
+                        return
+                      }
+                      setSelectedVersionId(unit.latestVersionId)
+                      void loadVersion(unit.latestVersionId)
+                    }}
+                  >
+                    <div className="font-medium">{unit.title}</div>
+                    <div className="text-xs text-[var(--muted-foreground)]">
+                      {unit.productId ? (productNames[unit.productId] ?? "Produto") : "Sem produto"} ·{" "}
+                      {taskStatus(unit.latestVersionStatus)} · {formatWhen(unit.updatedAt)}
+                    </div>
+                  </button>
+                  <Button type="button" size="sm" variant="ghost" onClick={() => void handleDeleteUnit(unit)}>
+                    Excluir
+                  </Button>
+                </div>
               ))}
             </CardContent>
           </Card>
@@ -303,7 +284,7 @@ export function ConteudoPage() {
                 <>
                   <div>
                     <h2 className="m-0 text-lg font-semibold">
-                      Revisão {version.revision} · {version.status}
+                      Revisão {version.revision} · {taskStatus(version.status)}
                     </h2>
                     <p className="mb-0 mt-1 text-xs text-[var(--muted-foreground)]">
                       ETag {etag ?? "—"} · atualizado {formatWhen(version.updatedAt)}
@@ -368,7 +349,7 @@ export function ConteudoPage() {
                 </>
               ) : (
                 <p className="m-0 text-sm text-[var(--muted-foreground)]">
-                  Selecione uma unidade.
+                  Selecione um conteúdo.
                 </p>
               )}
             </CardContent>

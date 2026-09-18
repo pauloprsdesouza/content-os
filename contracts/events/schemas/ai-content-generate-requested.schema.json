@@ -26,6 +26,12 @@
         "operationId": { "type": "string" },
         "title": { "type": "string" },
         "brief": { "type": ["string", "null"] },
+        "format": { "type": "string" },
+        "formatMold": { "type": "string" },
+        "citationContentHashes": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
         "requestReviewAfterGenerate": { "type": "boolean" }
       }
     }

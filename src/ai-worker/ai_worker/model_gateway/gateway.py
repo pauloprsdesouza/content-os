@@ -36,13 +36,24 @@ class ModelGateway:
 
         key = self._settings.litellm_api_key
         assert key is not None
-        response = await acompletion(
-            model=self._settings.litellm_model_alias,
-            messages=[
+        model = self._settings.litellm_model_alias
+        api_base = (
+            str(self._settings.litellm_api_base).rstrip("/")
+            if self._settings.litellm_api_base is not None
+            else None
+        )
+        if api_base and "/" not in model:
+            model = f"openai/{model}"
+        request = {
+            "model": model,
+            "messages": [
                 {"role": "system", "content": system},
                 {"role": "user", "content": prompt},
             ],
-            api_key=key.get_secret_value(),
-        )
+            "api_key": key.get_secret_value(),
+        }
+        if api_base:
+            request["api_base"] = api_base
+        response = await acompletion(**request)
         content = response["choices"][0]["message"]["content"]
         return str(content)

@@ -13,4 +13,10 @@ public interface IContentVersionRepository
         CancellationToken cancellationToken = default);
 
     void Add(ContentVersion version);
+
+    Task<IReadOnlyList<Guid>> ListIdsByUnitAsync(
+        Guid contentUnitId,
+        CancellationToken cancellationToken = default);
+
+    Task DeleteByUnitAsync(Guid contentUnitId, CancellationToken cancellationToken = default);
 }

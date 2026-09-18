@@ -284,6 +284,11 @@ namespace ContentOS.Migrations.Migrations
                         .HasMaxLength(4000)
                         .HasColumnType("character varying(4000)");
 
+                    b.Property<string>("CitationContentHashes")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("citation_content_hashes");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
@@ -292,10 +297,24 @@ namespace ContentOS.Migrations.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("created_by_user_id");
 
+                    b.Property<string>("Format")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("format");
+
+                    b.Property<Guid?>("ProductId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("product_id");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
+
+                    b.Property<Guid?>("TopicDiscoveryId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("topic_discovery_id");
 
                     b.Property<DateTimeOffset>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")
@@ -379,6 +398,219 @@ namespace ContentOS.Migrations.Migrations
                         .HasDatabaseName("ix_content_versions_status_updated_at");
 
                     b.ToTable("content_versions", "content");
+                });
+
+            modelBuilder.Entity("ContentOS.Domain.Content.DiscoveredWork", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AbstractText")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("abstract_text");
+
+                    b.Property<Guid>("DiscoveryId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("discovery_id");
+
+                    b.Property<int?>("PublicationYear")
+                        .HasColumnType("integer")
+                        .HasColumnName("publication_year");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("TopicId")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("topic_id");
+
+                    b.Property<string>("TopicName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("topic_name");
+
+                    b.Property<string>("WorkId")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("work_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DiscoveryId");
+
+                    b.ToTable("discovered_works", "content");
+                });
+
+            modelBuilder.Entity("ContentOS.Domain.Content.EditorialSeries", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AreaId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("area_id");
+
+                    b.Property<bool>("AreaIsSubfield")
+                        .HasColumnType("boolean")
+                        .HasColumnName("area_is_subfield");
+
+                    b.Property<string>("AreaName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("area_name");
+
+                    b.Property<string>("Cadence")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Format")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<DateTimeOffset?>("NextCollectionAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("next_collection_at");
+
+                    b.Property<Guid>("OwnerUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("owner_user_id");
+
+                    b.Property<int>("WindowDays")
+                        .HasColumnType("integer")
+                        .HasColumnName("window_days");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerUserId");
+
+                    b.ToTable("editorial_series", "content");
+                });
+
+            modelBuilder.Entity("ContentOS.Domain.Content.TopicDiscovery", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AreaId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("area_id");
+
+                    b.Property<bool>("AreaIsSubfield")
+                        .HasColumnType("boolean")
+                        .HasColumnName("area_is_subfield");
+
+                    b.Property<string>("AreaName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("area_name");
+
+                    b.Property<Guid?>("ContentUnitId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("content_unit_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Format")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<Guid?>("OperationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("operation_id");
+
+                    b.Property<Guid>("OwnerUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("owner_user_id");
+
+                    b.Property<DateTimeOffset?>("ScheduledFor")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("scheduled_for");
+
+                    b.Property<Guid?>("SeriesId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("series_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<int>("WindowDays")
+                        .HasColumnType("integer")
+                        .HasColumnName("window_days");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerUserId", "UpdatedAt");
+
+                    b.HasIndex("SeriesId", "ScheduledFor")
+                        .IsUnique()
+                        .HasFilter("series_id IS NOT NULL AND scheduled_for IS NOT NULL");
+
+                    b.ToTable("topic_discoveries", "content");
+                });
+
+            modelBuilder.Entity("ContentOS.Domain.Content.TopicProposal", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("DiscoveryId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("discovery_id");
+
+                    b.Property<bool>("IsSelected")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_selected");
+
+                    b.Property<string>("Label")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<string>("Rationale")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<string>("WorkIds")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("work_ids");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DiscoveryId");
+
+                    b.ToTable("topic_proposals", "content");
                 });
 
             modelBuilder.Entity("ContentOS.Domain.Knowledge.Claim", b =>
@@ -883,7 +1115,6 @@ namespace ContentOS.Migrations.Migrations
             modelBuilder.Entity("ContentOS.Domain.Research.ResearchFinding", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<decimal>("Confidence")

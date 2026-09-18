@@ -9,6 +9,8 @@ namespace ContentOS.Application.Content.ApplyGenerateResult;
 
 public sealed class ApplyContentGenerateResultHandler(
     IContentVersionRepository versions,
+    IContentUnitRepository units,
+    ITopicDiscoveryRepository discoveries,
     IOperationRepository operations,
     TimeProvider clock,
     IChangeCommitter changes,
@@ -66,6 +68,7 @@ public sealed class ApplyContentGenerateResultHandler(
             }
 
             operation.MarkSucceeded(now);
+            await MarkDiscoveryReadyAsync(version.ContentUnitId, now, cancellationToken);
         }
         catch (InvalidOperationException)
         {
@@ -79,5 +82,20 @@ public sealed class ApplyContentGenerateResultHandler(
         await changes.CommitAsync(cancellationToken);
         OperationProgressNotifications.Notify(progress, operation);
         return ApplyContentGenerateResultResult.Applied();
+    }
+
+    private async Task MarkDiscoveryReadyAsync(
+        Guid contentUnitId,
+        DateTimeOffset at,
+        CancellationToken cancellationToken)
+    {
+        var unit = await units.GetByIdAsync(contentUnitId, cancellationToken);
+        if (unit?.TopicDiscoveryId is not Guid discoveryId)
+        {
+            return;
+        }
+
+        var discovery = await discoveries.GetByIdAsync(discoveryId, cancellationToken);
+        discovery?.MarkReadyForReview(at);
     }
 }

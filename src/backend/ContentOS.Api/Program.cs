@@ -22,6 +22,7 @@ using Microsoft.Extensions.Options;
 using Serilog;
 using Wolverine;
 using Wolverine.Http;
+using Wolverine.Postgresql;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,7 +32,14 @@ builder.Host.UseSerilog((context, services, loggerConfiguration) =>
         .ReadFrom.Services(services)
         .Enrich.FromLogContext()
         .WriteTo.Console());
-builder.Host.UseWolverine();
+builder.Host.UseWolverine(opts =>
+{
+    var connectionString = builder.Configuration.GetConnectionString("Platform");
+    if (!string.IsNullOrWhiteSpace(connectionString))
+    {
+        opts.PersistMessagesWithPostgresql(connectionString, "wolverine");
+    }
+});
 
 builder.Services.AddProblemDetails();
 builder.Services.AddOpenApi();

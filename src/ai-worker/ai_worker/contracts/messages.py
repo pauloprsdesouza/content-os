@@ -37,10 +37,49 @@ class ContentGenerateCommandData(BaseModel):
     operation_id: UUID = Field(alias="operationId")
     title: str | None = None
     brief: str | None = None
+    format: str | None = None
+    format_mold: str | None = Field(default=None, alias="formatMold")
+    citation_content_hashes: list[str] = Field(
+        default_factory=list, alias="citationContentHashes"
+    )
     request_review_after_generate: bool = Field(
         default=True,
         alias="requestReviewAfterGenerate",
     )
+
+    model_config = {"populate_by_name": True}
+
+
+class TopicLabelWork(BaseModel):
+    work_id: str = Field(alias="workId")
+    title: str
+    year: int | None = None
+    topic_name: str | None = Field(default=None, alias="topicName")
+    abstract_text: str = Field(default="", alias="abstractText")
+
+    model_config = {"populate_by_name": True}
+
+
+class TopicLabelCommandData(BaseModel):
+    discovery_id: UUID = Field(alias="discoveryId")
+    operation_id: UUID = Field(alias="operationId")
+    works: list[TopicLabelWork] = Field(default_factory=list)
+
+    model_config = {"populate_by_name": True}
+
+
+class TopicLabelResult(BaseModel):
+    label: str
+    rationale: str
+    work_ids: list[str] = Field(serialization_alias="workIds")
+
+    model_config = {"populate_by_name": True}
+
+
+class TopicLabelCompletedData(BaseModel):
+    discovery_id: UUID = Field(serialization_alias="discoveryId")
+    operation_id: UUID = Field(serialization_alias="operationId")
+    topics: list[TopicLabelResult]
 
     model_config = {"populate_by_name": True}
 
@@ -99,5 +138,6 @@ class JobFailedData(BaseModel):
     content_version_id: UUID | None = Field(
         default=None, serialization_alias="contentVersionId"
     )
+    discovery_id: UUID | None = Field(default=None, serialization_alias="discoveryId")
 
     model_config = {"populate_by_name": True}

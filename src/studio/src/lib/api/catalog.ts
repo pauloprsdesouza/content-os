@@ -5,6 +5,7 @@ export type ProductListItem = {
   name: string
   description: string | null
   updatedAt: string
+  editionId: string | null
 }
 
 export type CurriculumItem = {
@@ -32,6 +33,22 @@ const SELECTION_KEY = "contentos.catalog.selection"
 export type CatalogSelection = {
   productId: string
   editionId: string
+}
+
+export function createProduct(input: { name: string; description?: string; editionName?: string }) {
+  return apiRequest<{ productId: string; editionId: string }>("/api/v1/products", {
+    method: "POST",
+    body: {
+      name: input.name,
+      description: input.description ?? null,
+      editionName: input.editionName ?? null,
+    },
+    idempotencyKey: crypto.randomUUID(),
+  })
+}
+
+export function deleteProduct(productId: string) {
+  return apiRequest<void>(`/api/v1/products/${productId}`, { method: "DELETE" })
 }
 
 export function listProducts(page = 1, pageSize = 25) {

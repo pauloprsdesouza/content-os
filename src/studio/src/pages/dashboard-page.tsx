@@ -49,7 +49,7 @@ export function DashboardPage() {
   }, [])
 
   const metrics = [
-    { label: "Claims aguardando revisão", value: summary?.claimsPendingReview ?? "…" },
+    { label: "Afirmações para revisar", value: summary?.claimsPendingReview ?? "…" },
     { label: "Fontes monitoradas", value: summary?.sourcesTotal ?? "…" },
     { label: "Pesquisas ativas", value: summary?.researchJobsActive ?? "…" },
     { label: "Conteúdos em aprovação", value: summary?.contentVersionsPendingApproval ?? "…" },
@@ -63,7 +63,7 @@ export function DashboardPage() {
     summary && summary.claimsPendingReview > 0
       ? {
           href: "/claims",
-          title: "Revisar claims",
+          title: "Afirmações para revisar",
           detail: `${summary.claimsPendingReview} na fila`,
         }
       : null,

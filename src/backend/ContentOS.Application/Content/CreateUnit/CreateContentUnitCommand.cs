@@ -4,4 +4,8 @@ public sealed record CreateContentUnitCommand(
     string Title,
     string? Brief,
     bool QueueGeneration,
-    Guid CreatedByUserId);
+    Guid CreatedByUserId,
+    string Format,
+    IReadOnlyList<string>? CitationContentHashes = null,
+    Guid? TopicDiscoveryId = null,
+    Guid? ProductId = null);

@@ -14,4 +14,6 @@ public sealed class ContentUnitRepository(PlatformDbContext dbContext) : IConten
             .FirstOrDefaultAsync(unit => unit.Id == contentUnitId, cancellationToken);
 
     public void Add(ContentUnit unit) => dbContext.Set<ContentUnit>().Add(unit);
+
+    public void Remove(ContentUnit unit) => dbContext.Set<ContentUnit>().Remove(unit);
 }

@@ -22,4 +22,18 @@ public sealed class EvidenceRepository(PlatformDbContext dbContext) : IEvidenceR
     }
 
     public void Add(Evidence evidence) => dbContext.Set<Evidence>().Add(evidence);
+
+    public Task<bool> AnyForSnapshotsAsync(
+        IReadOnlyCollection<Guid> snapshotIds,
+        CancellationToken cancellationToken = default)
+    {
+        if (snapshotIds.Count == 0)
+        {
+            return Task.FromResult(false);
+        }
+
+        return dbContext.Set<Evidence>()
+            .AsNoTracking()
+            .AnyAsync(item => snapshotIds.Contains(item.SnapshotId), cancellationToken);
+    }
 }

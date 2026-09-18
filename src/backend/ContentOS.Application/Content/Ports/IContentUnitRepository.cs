@@ -9,4 +9,6 @@ public interface IContentUnitRepository
         CancellationToken cancellationToken = default);
 
     void Add(ContentUnit unit);
+
+    void Remove(ContentUnit unit);
 }

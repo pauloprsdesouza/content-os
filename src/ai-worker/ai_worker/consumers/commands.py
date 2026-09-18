@@ -14,6 +14,7 @@ from ai_worker.contracts.messages import (
     ContentReviewCommandData,
     JobFailedData,
     ResearchCommandData,
+    TopicLabelCommandData,
 )
 from ai_worker.model_gateway.gateway import ModelGateway
 from ai_worker.settings.config import WorkerSettings
@@ -25,6 +26,7 @@ COMMAND_TYPES = {
     "ai.research",
     "ai.content.generate",
     "ai.content.review",
+    "ai.topics.label",
 }
 
 
@@ -137,6 +139,17 @@ class AiCommandConsumer:
                 data=completed.model_dump(by_alias=True, mode="json"),
             )
 
+        if event_type == "ai.topics.label":
+            command = TopicLabelCommandData.model_validate(data)
+            completed = await self._agent.label_topics(command)
+            return CloudEvent(
+                type="ai.topics.label.completed",
+                subject=subject,
+                correlationid=correlation,
+                idempotencykey=f"result:{idempotency_key}",
+                data=completed.model_dump(by_alias=True, mode="json"),
+            )
+
         raise ValueError(f"Unsupported command type: {event_type}")
 
     def _failure_event(
@@ -150,6 +163,7 @@ class AiCommandConsumer:
             research_job_id=data.get("researchJobId") or data.get("research_job_id"),
             content_version_id=data.get("contentVersionId")
             or data.get("content_version_id"),
+            discovery_id=data.get("discoveryId") or data.get("discovery_id"),
         )
         return CloudEvent(
             type="ai.job.failed",

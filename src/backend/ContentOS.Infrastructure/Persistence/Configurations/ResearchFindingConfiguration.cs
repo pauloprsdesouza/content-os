@@ -13,6 +13,9 @@ public sealed class ResearchFindingConfiguration : IEntityTypeConfiguration<Rese
 
         builder.HasKey(finding => finding.Id);
 
+        builder.Property(finding => finding.Id)
+            .ValueGeneratedNever();
+
         builder.Property(finding => finding.ResearchJobId)
             .HasColumnName("research_job_id")
             .IsRequired();

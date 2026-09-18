@@ -9,4 +9,8 @@ public interface IEvidenceRepository
         CancellationToken cancellationToken = default);
 
     void Add(Evidence evidence);
+
+    Task<bool> AnyForSnapshotsAsync(
+        IReadOnlyCollection<Guid> snapshotIds,
+        CancellationToken cancellationToken = default);
 }

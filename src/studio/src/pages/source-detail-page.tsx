@@ -80,7 +80,8 @@ export function SourceDetailPage() {
   async function handleCreateSnapshot(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setCreating(true)
-    const form = new FormData(event.currentTarget)
+    const formElement = event.currentTarget
+    const form = new FormData(formElement)
     const content = String(form.get("content") ?? "")
 
     try {
@@ -89,7 +90,7 @@ export function SourceDetailPage() {
         mediaType: "text/plain",
       })
       toast.success("Snapshot capturado")
-      event.currentTarget.reset()
+      formElement.reset()
       await load()
     } catch (requestError) {
       toast.error(

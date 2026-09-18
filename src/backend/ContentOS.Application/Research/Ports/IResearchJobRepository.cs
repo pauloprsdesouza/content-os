@@ -9,4 +9,6 @@ public interface IResearchJobRepository
         CancellationToken cancellationToken = default);
 
     void Add(ResearchJob job);
+
+    Task DeleteGraphAsync(Guid researchJobId, CancellationToken cancellationToken = default);
 }

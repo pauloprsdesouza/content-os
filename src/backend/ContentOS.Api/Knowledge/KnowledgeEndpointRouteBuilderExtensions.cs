@@ -12,6 +12,7 @@ public static class KnowledgeEndpointRouteBuilderExtensions
         sources.MapGetSources();
         sources.MapCreateSource();
         sources.MapGetSource();
+        sources.MapDiscardSource();
         sources.MapGetSnapshots();
         sources.MapCreateSnapshot();
         sources.MapCaptureExistingSource();

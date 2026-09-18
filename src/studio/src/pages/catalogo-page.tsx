@@ -1,13 +1,16 @@
-import { useEffect, useState } from "react"
+import { FormEvent, useEffect, useState } from "react"
+import { Link } from "react-router"
 import { toast } from "sonner"
 
 import { EmptyState, ErrorState, LoadingState } from "@/components/page-states"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { ApiError } from "@/lib/api/client"
 import {
-  DEMO_EDITION_ID,
-  DEMO_PRODUCT_ID,
+  createProduct,
+  deleteProduct,
   getEdition,
   listProducts,
   replaceCurriculum,
@@ -26,43 +29,53 @@ function formatWhen(value: string) {
 
 export function CatalogoPage() {
   const [products, setProducts] = useState<ProductListItem[]>([])
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(null)
   const [edition, setEdition] = useState<EditionDetail | null>(null)
   const [etag, setEtag] = useState<string | null>(null)
   const [approvedUnits, setApprovedUnits] = useState<ContentUnitListItem[]>([])
   const [draftOrder, setDraftOrder] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [creating, setCreating] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [conflict, setConflict] = useState<string | null>(null)
 
-  async function load() {
+  async function load(preferProductId?: string) {
     setLoading(true)
     setError(null)
     try {
       const [productPage, unitsPage] = await Promise.all([
         listProducts(),
-        listContentUnits(),
+        listContentUnits(1, 100),
       ])
       setProducts(productPage.items)
+      const product =
+        productPage.items.find((item) => item.id === (preferProductId ?? selectedProductId)) ??
+        productPage.items[0]
+      setSelectedProductId(product?.id ?? null)
 
-      const productId = productPage.items[0]?.id ?? DEMO_PRODUCT_ID
-      const editionId = DEMO_EDITION_ID
+      if (!product?.editionId) {
+        setEdition(null)
+        setEtag(null)
+        setDraftOrder([])
+        setApprovedUnits([])
+        return
+      }
 
-      const editionResult = await getEdition(productId, editionId)
+      const editionResult = await getEdition(product.id, product.editionId)
       setEdition(editionResult.data)
       setEtag(editionResult.etag)
-      setDraftOrder(
-        editionResult.data.curriculum.map((item) => item.contentVersionId),
-      )
+      setDraftOrder(editionResult.data.curriculum.map((item) => item.contentVersionId))
       writeCatalogSelection({
         productId: editionResult.data.productId,
         editionId: editionResult.data.id,
       })
-
       setApprovedUnits(
         unitsPage.items.filter(
           (unit) =>
-            unit.latestVersionId && unit.latestVersionStatus === "Approved",
+            unit.latestVersionId &&
+            unit.latestVersionStatus === "Approved" &&
+            unit.productId === product.id,
         ),
       )
     } catch (requestError) {
@@ -137,6 +150,45 @@ export function CatalogoPage() {
     }
   }
 
+  async function handleCreate(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const form = event.currentTarget
+    const data = new FormData(form)
+    const name = String(data.get("name") ?? "").trim()
+    if (!name) {
+      toast.error("Dê um nome ao produto.")
+      return
+    }
+    setCreating(true)
+    try {
+      const created = await createProduct({
+        name,
+        description: String(data.get("description") ?? "").trim() || undefined,
+      })
+      form.reset()
+      toast.success("Produto criado.")
+      await load(created.productId)
+    } catch (requestError) {
+      toast.error(requestError instanceof Error ? requestError.message : "Não foi possível criar o produto.")
+    } finally {
+      setCreating(false)
+    }
+  }
+
+  async function handleDeleteProduct(product: ProductListItem) {
+    if (!window.confirm(`Apagar o produto “${product.name}”? O currículo some com ele. Vendas e matrículas impedem a exclusão.`)) {
+      return
+    }
+    try {
+      await deleteProduct(product.id)
+      toast.success("Produto apagado.")
+      setSelectedProductId(null)
+      await load()
+    } catch (requestError) {
+      toast.error(requestError instanceof Error ? requestError.message : "Não foi possível apagar o produto.")
+    }
+  }
+
   const approvedByVersionId = new Map(
     approvedUnits
       .filter((unit) => unit.latestVersionId)
@@ -160,7 +212,34 @@ export function CatalogoPage() {
       {!loading && !error && products.length === 0 && (
         <EmptyState
           title="Nenhum produto"
-          description="Rode as migrations e reinicie a API em Development para seedar o produto demo."
+          description="Crie o produto primeiro. Depois o assistente Novo conteúdo amarra cada peça a ele."
+        />
+      )}
+
+      {!loading && !error && (
+        <Card>
+          <CardContent className="pt-6">
+            <form className="grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end" onSubmit={(event) => void handleCreate(event)}>
+              <div className="space-y-1.5">
+                <Label htmlFor="product-name">Novo produto</Label>
+                <Input id="product-name" name="name" placeholder="Nome do produto" required />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="product-description">Descrição</Label>
+                <Input id="product-description" name="description" placeholder="Opcional" />
+              </div>
+              <Button type="submit" disabled={creating}>
+                {creating ? "Criando…" : "Criar produto"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      )}
+
+      {!loading && !error && products.length > 0 && !edition && (
+        <EmptyState
+          title="Produto sem edição"
+          description="Este produto não tem edição para montar o currículo."
         />
       )}
 
@@ -168,18 +247,39 @@ export function CatalogoPage() {
         <div className="grid gap-4 lg:grid-cols-[280px_1fr]">
           <Card>
             <CardContent className="space-y-2 pt-4">
-              {products.map((product) => (
-                <div
-                  key={product.id}
-                  className="rounded-[var(--radius-md)] bg-[var(--accent)] px-3 py-2 text-sm"
-                >
-                  <div className="font-medium">{product.name}</div>
-                  <div className="text-xs text-[var(--muted-foreground)]">
-                    {product.description ?? "Sem descrição"} ·{" "}
-                    {formatWhen(product.updatedAt)}
+              {products.map((product) => {
+                const selected = product.id === selectedProductId
+                return (
+                  <div
+                    key={product.id}
+                    className={`flex items-start justify-between gap-2 rounded-[var(--radius-md)] px-3 py-2 text-sm ${
+                      selected ? "bg-[var(--accent)]" : "border border-[var(--border)]"
+                    }`}
+                  >
+                    <button
+                      type="button"
+                      className="min-w-0 flex-1 border-0 bg-transparent p-0 text-left"
+                      onClick={() => {
+                        setSelectedProductId(product.id)
+                        void load(product.id)
+                      }}
+                    >
+                      <div className="font-medium">{product.name}</div>
+                      <div className="text-xs text-[var(--muted-foreground)]">
+                        {product.description ?? "Sem descrição"} · {formatWhen(product.updatedAt)}
+                      </div>
+                    </button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => void handleDeleteProduct(product)}
+                    >
+                      Excluir
+                    </Button>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </CardContent>
           </Card>
 
@@ -191,7 +291,7 @@ export function CatalogoPage() {
                     {edition.productName} · {edition.name}
                   </h2>
                   <p className="mb-0 mt-1 text-xs text-[var(--muted-foreground)]">
-                    Edição {edition.id} · ETag {etag ?? "—"}
+                    O currículo entra depois da revisão. Só versões aprovadas deste produto.
                   </p>
                 </div>
                 {conflict && (

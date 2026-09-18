@@ -1,3 +1,5 @@
+using ContentOS.Application.Content.Formats;
+using ContentOS.Application.Content.Generation;
 using ContentOS.Application.Content.Ports;
 using ContentOS.Application.Messaging;
 using ContentOS.Application.Operations.Ports;
@@ -10,8 +12,10 @@ namespace ContentOS.Application.Content.RequestReview;
 
 public sealed class RequestContentReviewHandler(
     IContentVersionRepository versions,
+    IContentUnitRepository units,
     IOperationRepository operations,
     IAiCommandPublisher aiCommands,
+    ContentFormatStrategyCatalog formats,
     IIdGenerator ids,
     TimeProvider clock,
     IChangeCommitter changes)
@@ -53,13 +57,7 @@ public sealed class RequestContentReviewHandler(
                         CorrelationId: operationId.ToString("N"),
                         IdempotencyKey: $"content-generate:{version.Id}:v{version.Version}",
                         SchemaVersion: "1",
-                        Data: new
-                        {
-                            contentUnitId = version.ContentUnitId,
-                            contentVersionId = version.Id,
-                            operationId,
-                            requestReviewAfterGenerate = true
-                        }),
+                        Data: await BuildGenerateBriefAsync(version, operationId, cancellationToken)),
                     cancellationToken);
                 await changes.CommitAsync(cancellationToken);
 
@@ -123,5 +121,26 @@ public sealed class RequestContentReviewHandler(
         {
             return RequestContentReviewResult.Invalid("CONTENT_REVIEW_INVALID_STATE");
         }
+    }
+
+    private async Task<ContentGenerationBrief> BuildGenerateBriefAsync(
+        ContentVersion version,
+        Guid operationId,
+        CancellationToken cancellationToken)
+    {
+        var unit = await units.GetByIdAsync(version.ContentUnitId, cancellationToken);
+        var format = unit?.Format ?? ContentFormat.Article;
+        var mold = formats.Find(format)?.BuildMold()
+            ?? new ArticleFormatStrategy().BuildMold();
+        return new ContentGenerationBrief(
+            version.ContentUnitId,
+            version.Id,
+            operationId,
+            unit?.Title ?? "Conteúdo",
+            unit?.Brief,
+            format.Code,
+            mold,
+            unit?.ListCitationHashes() ?? [],
+            true);
     }
 }

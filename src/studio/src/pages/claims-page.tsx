@@ -46,7 +46,7 @@ export function ClaimsPage() {
       setError(
         requestError instanceof Error
           ? requestError.message
-          : "Não foi possível carregar a fila de claims.",
+          : "Não foi possível carregar as afirmações para revisar.",
       )
     } finally {
       setLoading(false)
@@ -73,7 +73,7 @@ export function ClaimsPage() {
     setActing(true)
     try {
       await approveClaim(claim.id, etag)
-      toast.success("Claim aprovada")
+      toast.success("Afirmação aprovada")
       await loadQueue(index)
     } catch (requestError) {
       handleReviewError(requestError)
@@ -95,7 +95,7 @@ export function ClaimsPage() {
     setActing(true)
     try {
       await rejectClaim(claim.id, etag, notes.trim())
-      toast.success("Claim rejeitada")
+      toast.success("Afirmação rejeitada")
       await loadQueue(index)
     } catch (requestError) {
       handleReviewError(requestError)
@@ -156,15 +156,15 @@ export function ClaimsPage() {
       <div className="space-y-6">
         <div>
           <h2 className="m-0 text-[30px] font-bold tracking-[-0.03em] text-[var(--foreground)]">
-            Revisão de evidências
+            Afirmações para revisar
           </h2>
           <p className="mb-0 mt-2 text-sm text-[var(--muted-foreground)]">
-            Nenhuma claim pendente no momento.
+            Nenhuma afirmação pendente no momento.
           </p>
         </div>
         <EmptyState
           title="Fila vazia"
-          description="Quando a pesquisa extrair claims, elas aparecerão aqui para aprovação humana."
+          description="Quando a pesquisa extrair afirmações, elas aparecerão aqui para revisão humana."
         />
       </div>
     )
@@ -177,10 +177,10 @@ export function ClaimsPage() {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h2 className="m-0 text-[30px] font-bold tracking-[-0.03em] text-[var(--foreground)]">
-            Revisão de evidências
+            Afirmações para revisar
           </h2>
           <p className="mb-0 mt-2 text-sm text-[var(--muted-foreground)]">
-            Claim {index + 1} de {queue.length} · Atalhos: A aprova · R rejeita
+            Afirmação {index + 1} de {queue.length} · Atalhos: A aprova · R rejeita
           </p>
         </div>
         <Button variant="outline" type="button" onClick={() => void loadQueue(index)}>
@@ -202,7 +202,7 @@ export function ClaimsPage() {
           <CardContent className="space-y-6 p-6">
             <div>
               <p className="m-0 text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--primary)]">
-                Claim proposta
+                Afirmação proposta
               </p>
               <p className="mb-0 mt-3 text-2xl font-bold leading-snug tracking-[-0.02em] text-[var(--foreground)]">
                 {claim.statement}
@@ -276,7 +276,7 @@ export function ClaimsPage() {
                 disabled={index <= 0}
                 onClick={() => void goTo(index - 1)}
               >
-                ← Claim anterior
+                ← Afirmação anterior
               </button>
               <button
                 type="button"
@@ -284,7 +284,7 @@ export function ClaimsPage() {
                 disabled={index >= queue.length - 1}
                 onClick={() => void goTo(index + 1)}
               >
-                Próxima claim →
+                Próxima afirmação →
               </button>
             </div>
             <div>

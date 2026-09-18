@@ -27,4 +27,6 @@ public sealed class SourceRepository(PlatformDbContext dbContext) : ISourceRepos
             .FirstOrDefaultAsync(source => source.CanonicalUri == canonicalUri, cancellationToken);
 
     public void Add(Source source) => dbContext.Set<Source>().Add(source);
+
+    public void Remove(Source source) => dbContext.Set<Source>().Remove(source);
 }

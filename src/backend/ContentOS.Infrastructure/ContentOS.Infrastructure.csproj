@@ -22,6 +22,7 @@
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
     <PackageReference Include="RabbitMQ.Client" />
     <PackageReference Include="WolverineFx" />
+    <PackageReference Include="PdfPig" />
     <PackageReference Include="WolverineFx.Postgresql" />
   </ItemGroup>
 

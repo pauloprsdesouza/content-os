@@ -4,4 +4,5 @@ public sealed record ProductListItemResponse(
     Guid Id,
     string Name,
     string? Description,
-    DateTimeOffset UpdatedAt);
+    DateTimeOffset UpdatedAt,
+    Guid? EditionId);

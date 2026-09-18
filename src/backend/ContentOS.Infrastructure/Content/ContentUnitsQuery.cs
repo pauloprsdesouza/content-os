@@ -10,9 +10,14 @@ public sealed class ContentUnitsQuery(PlatformDbContext dbContext) : IContentUni
     public async Task<ContentUnitsPage> GetPageAsync(
         int page,
         int pageSize,
+        Guid? productId,
         CancellationToken cancellationToken = default)
     {
         var unitsQuery = dbContext.Set<ContentUnit>().AsNoTracking();
+        if (productId is Guid selectedProduct)
+        {
+            unitsQuery = unitsQuery.Where(unit => unit.ProductId == selectedProduct);
+        }
         var total = await unitsQuery.LongCountAsync(cancellationToken);
 
         var units = await unitsQuery
@@ -41,9 +46,11 @@ public sealed class ContentUnitsQuery(PlatformDbContext dbContext) : IContentUni
                     unit.Id,
                     unit.Title,
                     unit.Brief,
+                    unit.Format.Code,
                     latest?.Id,
                     latest?.Status.ToString(),
-                    unit.UpdatedAt);
+                    unit.UpdatedAt,
+                    unit.ProductId);
             })
             .ToList();
 

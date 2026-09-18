@@ -17,13 +17,32 @@ public sealed class ProductsQuery(PlatformDbContext dbContext) : IProductsQuery
         var items = await query
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(product => new ProductListItem(
-                product.Id,
-                product.Name,
-                product.Description,
-                product.UpdatedAt))
             .ToListAsync(cancellationToken);
+        var productIds = items.Select(product => product.Id).ToArray();
+        var editions = await dbContext.Set<Edition>()
+            .AsNoTracking()
+            .Where(edition => productIds.Contains(edition.ProductId))
+            .Select(edition => new { edition.ProductId, edition.Id, edition.CreatedAt })
+            .ToListAsync(cancellationToken);
+        var editionByProduct = editions
+            .GroupBy(edition => edition.ProductId)
+            .ToDictionary(
+                group => group.Key,
+                group => group.OrderBy(edition => edition.CreatedAt).First().Id);
 
-        return new ProductsPage(items, page, pageSize, totalItems);
+        return new ProductsPage(
+            items.Select(product =>
+            {
+                Guid? editionId = editionByProduct.TryGetValue(product.Id, out var found) ? found : null;
+                return new ProductListItem(
+                    product.Id,
+                    product.Name,
+                    product.Description,
+                    product.UpdatedAt,
+                    editionId);
+            }).ToList(),
+            page,
+            pageSize,
+            totalItems);
     }
 }

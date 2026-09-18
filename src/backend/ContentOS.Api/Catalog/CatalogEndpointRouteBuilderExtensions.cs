@@ -6,6 +6,8 @@ public static class CatalogEndpointRouteBuilderExtensions
     {
         var products = endpoints.MapGroup("/api/v1/products");
         products.MapListProducts();
+        products.MapCreateProduct();
+        products.MapDeleteProduct();
         products.MapGetEdition();
 
         var editions = endpoints.MapGroup("/api/v1/editions");

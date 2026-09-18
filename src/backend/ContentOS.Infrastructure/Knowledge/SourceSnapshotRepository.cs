@@ -15,4 +15,18 @@ public sealed class SourceSnapshotRepository(PlatformDbContext dbContext) : ISou
 
     public void Add(SourceSnapshot snapshot) =>
         dbContext.Set<SourceSnapshot>().Add(snapshot);
+
+    public async Task<IReadOnlyList<Guid>> ListIdsBySourceAsync(
+        Guid sourceId,
+        CancellationToken cancellationToken = default) =>
+        await dbContext.Set<SourceSnapshot>()
+            .AsNoTracking()
+            .Where(snapshot => snapshot.SourceId == sourceId)
+            .Select(snapshot => snapshot.Id)
+            .ToListAsync(cancellationToken);
+
+    public Task DeleteBySourceAsync(Guid sourceId, CancellationToken cancellationToken = default) =>
+        dbContext.Set<SourceSnapshot>()
+            .Where(snapshot => snapshot.SourceId == sourceId)
+            .ExecuteDeleteAsync(cancellationToken);
 }

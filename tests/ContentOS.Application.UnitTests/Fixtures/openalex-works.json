@@ -1,0 +1,17 @@
+{
+  "results": [
+    {
+      "id": "https://openalex.org/W2741809807",
+      "display_name": "Recorded nutrition work",
+      "publication_year": 2026,
+      "abstract_inverted_index": {
+        "Hello": [0],
+        "world": [1]
+      },
+      "primary_topic": {
+        "id": "https://openalex.org/T100",
+        "display_name": "Nutrition policy"
+      }
+    }
+  ]
+}

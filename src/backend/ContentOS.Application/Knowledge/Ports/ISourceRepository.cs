@@ -17,4 +17,6 @@ public interface ISourceRepository
         CancellationToken cancellationToken = default);
 
     void Add(Source source);
+
+    void Remove(Source source);
 }

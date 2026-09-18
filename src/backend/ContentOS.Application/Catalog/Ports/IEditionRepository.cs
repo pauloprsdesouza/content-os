@@ -14,4 +14,10 @@ public interface IEditionRepository
         CancellationToken cancellationToken = default);
 
     void Add(Edition edition);
+
+    Task<IReadOnlyList<Edition>> ListByProductAsync(
+        Guid productId,
+        CancellationToken cancellationToken = default);
+
+    void Remove(Edition edition);
 }
