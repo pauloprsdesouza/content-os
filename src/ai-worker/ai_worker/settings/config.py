@@ -13,7 +13,7 @@ class WorkerSettings(BaseSettings):
     )
 
     rabbitmq_url: AmqpDsn = "amqp://contentos:contentos@localhost:5672/"
-    api_base_url: AnyHttpUrl = "http://localhost:5080"
+    api_base_url: AnyHttpUrl = "http://localhost:5231"
     environment: str = "development"
     log_level: str = "INFO"
     ai_stub: bool = True

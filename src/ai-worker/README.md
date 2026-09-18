@@ -9,13 +9,21 @@ result events. **No PostgreSQL credentials.**
 Stub mode is the default when `CONTENT_OS_AI_STUB=true` **or** when
 `CONTENT_OS_LITELLM_API_KEY` is unset.
 
+Prefer Doppler (Homelab RabbitMQ + worker key):
+
+```powershell
+.\ops\doppler\run-ai-worker.ps1
+```
+
+Manual stub (Compose localhost only):
+
 ```powershell
 Set-Location src/ai-worker
 python -m venv .venv
 .\.venv\Scripts\python -m pip install -e .
 $env:CONTENT_OS_AI_STUB = "true"
 $env:CONTENT_OS_RABBITMQ_URL = "amqp://contentos:change-me-local-only@127.0.0.1:5672/"
-$env:CONTENT_OS_API_BASE_URL = "http://localhost:5080"
+$env:CONTENT_OS_API_BASE_URL = "http://localhost:5231"
 $env:CONTENT_OS_WORKER_API_KEY = "local-dev-worker-key"
 .\.venv\Scripts\python -m ai_worker.bootstrap.app
 ```

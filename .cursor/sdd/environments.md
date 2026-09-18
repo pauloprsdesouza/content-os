@@ -1,15 +1,15 @@
 # Environments
 
-| Env | Purpose | Deploy |
+| Env | Purpose | Deploy / secrets |
 |---|---|---|
-| Local | Dev against Compose (Postgres, RabbitMQ, Caddy) | `ops/compose` |
-| Homelab | Shared infra / validation when available | Compose on LAN host |
-| Hostinger | MVP production target (VPS Debian) | Direct deploy (no CI/CD yet) |
+| Local | Laptop apps → Homelab infra (`192.168.10.13`) | `doppler run -c local_contentos` (see `ops/doppler/README.md`); optional `ops/compose` if Homelab down |
+| Development | Apps on Homelab host | Doppler `dev_contentos` |
+| Hostinger | MVP production (VPS Debian) | Doppler `prd_contentos`; direct deploy (no CI/CD yet) |
 
 ## MVP deploy policy
 
-- Build images locally (or on the server); `docker compose` up.
+- Prefer local processes + Homelab infra for day-to-day; Compose under `ops/compose` is fallback infra only.
 - Run `ContentOS.Migrations` once with advisory locking before promoting API.
 - Same artifact digest preferred Homelab → Hostinger when Homelab is used for certification.
-- Secrets via env / host secret store — never committed.
+- Secrets via Doppler — never committed.
 - Do not point Local PC at Hostinger production DB by default.

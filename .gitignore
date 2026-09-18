@@ -19,6 +19,9 @@
 !.env.*.example
 appsettings.*.local.json
 **/secrets/
+ops/doppler/.local.*.env
+# Doppler CLI may write machine-local overrides; keep values out of git
+.doppler.yaml.local
 
 # OS / IDE
 .DS_Store

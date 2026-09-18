@@ -14,11 +14,21 @@ Internal content operations platform: sources → claims → learning content �
 - AI Worker: Python, Strands Agents, LiteLLM SDK, RabbitMQ
 - Ops: Docker Compose, Caddy
 
-## Quick start (local)
+## Quick start (local → Homelab, no Docker for apps)
 
-```bash
-cp ops/compose/.env.example ops/compose/.env
-docker compose -f ops/compose/docker-compose.yml up -d
+Secrets: Doppler (`ops/doppler/README.md`). Apps run on the laptop; Postgres/RabbitMQ on Homelab (`192.168.10.13`).
+
+```powershell
+doppler login
+doppler setup   # uses doppler.yaml → epilogik-platform / local_contentos
+
+.\ops\doppler\run-migrations.ps1
+.\ops\doppler\run-api.ps1
+# optional: .\ops\doppler\run-ai-worker.ps1
+
+cd src/studio
+npm install
+npm run dev   # http://localhost:5173 → proxies /api to :5231
 ```
 
-See `ops/compose/README.md` after Phase 0 lands.
+Compose under `ops/compose` remains available for an all-local infra stack if Homelab is unreachable.

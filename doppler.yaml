@@ -1,0 +1,5 @@
+# Pins this directory to the Content OS local config (branch on epilogik-platform).
+# Override anytime: doppler setup  |  doppler run -p ... -c ...
+setup:
+  project: epilogik-platform
+  config: local_contentos
