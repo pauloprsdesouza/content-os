@@ -1,0 +1,11 @@
+FROM node:22-alpine AS build
+WORKDIR /src
+COPY src/studio/package.json src/studio/package-lock.json ./
+RUN npm ci
+COPY src/studio/ ./
+RUN npm run build
+
+FROM caddy:2-alpine
+COPY ops/caddy/Caddyfile.prod /etc/caddy/Caddyfile
+COPY --from=build /src/dist /srv/studio
+EXPOSE 8080

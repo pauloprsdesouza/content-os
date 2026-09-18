@@ -12,6 +12,12 @@ public sealed class CommerceOptions
 
     public string? ApiKey { get; init; }
 
+    public string? ClientId { get; init; }
+
+    public string? ClientSecret { get; init; }
+
+    public string? AccountId { get; init; }
+
     public string BaseUrl { get; init; } = "https://public-api.kiwify.com.br";
 
     /// <summary>

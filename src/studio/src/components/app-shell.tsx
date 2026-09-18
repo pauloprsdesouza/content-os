@@ -1,9 +1,6 @@
-import {
-  CircleHelp,
-  LogOut,
-  Settings2,
-} from "lucide-react"
-import { NavLink, Outlet, useLocation, useNavigate } from "react-router"
+import { useState } from "react"
+import { LogOut, UserRound } from "lucide-react"
+import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router"
 import { toast } from "sonner"
 
 import { useAuth } from "@/lib/auth"
@@ -45,11 +42,19 @@ export function AppShell() {
   const navigate = useNavigate()
   const { session, logout } = useAuth()
   const displayName = session?.userName ?? "Operador"
+  const [accountOpen, setAccountOpen] = useState(false)
+  const [logoutError, setLogoutError] = useState<string | null>(null)
 
   async function handleLogout() {
-    await logout()
-    toast.success("Sessão encerrada")
-    navigate("/login", { replace: true })
+    setLogoutError(null)
+    try {
+      await logout()
+      toast.success("Sessão encerrada")
+      navigate("/login", { replace: true })
+    } catch {
+      setLogoutError("Não foi possível encerrar a sessão.")
+      toast.error("Não foi possível encerrar a sessão.")
+    }
   }
 
   return (
@@ -102,7 +107,7 @@ export function AppShell() {
             </div>
             <div className="min-w-0">
               <p className="m-0 truncate text-xs font-semibold">{displayName}</p>
-              <p className="m-0 text-[10px] text-[var(--sidebar-muted)]">Admin</p>
+              <p className="m-0 text-[10px] text-[var(--sidebar-muted)]">Operador</p>
             </div>
           </div>
           <button
@@ -127,30 +132,45 @@ export function AppShell() {
               aria-label="Buscar em todo o workspace"
             />
           </label>
-          <div className="flex items-center gap-1 text-[var(--muted-foreground)]">
+          <div className="relative">
             <button
               type="button"
-              className="grid size-9 place-items-center rounded-[var(--radius-sm)] hover:bg-[var(--background)]"
-              aria-label="Ajuda"
+              className="grid size-9 place-items-center rounded-full bg-[var(--primary)] text-[11px] font-semibold text-white"
+              aria-label="Conta"
+              aria-expanded={accountOpen}
+              aria-haspopup="menu"
+              onClick={() => setAccountOpen((open) => !open)}
             >
-              <CircleHelp className="size-4" />
+              {initials(session?.userName)}
             </button>
-            <button
-              type="button"
-              className="grid size-9 place-items-center rounded-[var(--radius-sm)] hover:bg-[var(--background)]"
-              aria-label="Configurações"
-            >
-              <Settings2 className="size-4" />
-            </button>
-            <button
-              type="button"
-              onClick={() => void handleLogout()}
-              className="ml-1 grid size-9 place-items-center rounded-[var(--radius-sm)] hover:bg-[var(--background)]"
-              aria-label="Sair"
-              title="Sair"
-            >
-              <LogOut className="size-4" />
-            </button>
+            {accountOpen && (
+              <div
+                role="menu"
+                className="absolute right-0 z-20 mt-2 w-64 rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--topbar)] p-2 shadow-lg"
+              >
+                <p className="m-0 truncate px-2 py-1 text-sm font-semibold">{displayName}</p>
+                <p className="m-0 truncate px-2 pb-2 text-xs text-[var(--muted-foreground)]">{displayName}</p>
+                <Link
+                  role="menuitem"
+                  to="/perfil"
+                  className="flex items-center gap-2 rounded-[var(--radius-sm)] px-2 py-2 text-sm hover:bg-[var(--background)]"
+                  onClick={() => setAccountOpen(false)}
+                >
+                  <UserRound className="size-4" aria-hidden />
+                  Perfil
+                </Link>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="flex w-full items-center gap-2 rounded-[var(--radius-sm)] px-2 py-2 text-left text-sm hover:bg-[var(--background)]"
+                  onClick={() => void handleLogout()}
+                >
+                  <LogOut className="size-4" aria-hidden />
+                  Sair
+                </button>
+                {logoutError && <p className="m-0 px-2 pt-1 text-xs text-[var(--destructive)]">{logoutError}</p>}
+              </div>
+            )}
           </div>
         </header>
         <main className="p-6 md:px-8 md:py-7">

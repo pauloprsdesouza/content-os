@@ -7,4 +7,6 @@ public sealed class RabbitMqOptions
     public string Uri { get; init; } = string.Empty;
     public string AiRequestsExchange { get; init; } = string.Empty;
     public string AiResultsQueue { get; init; } = string.Empty;
+    public string AiResultsDeadLetterQueue { get; init; } = string.Empty;
+    public int AiResultMaxAttempts { get; init; } = 5;
 }

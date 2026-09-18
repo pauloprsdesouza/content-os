@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contentos.local/schemas/ai-research-requested.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["specversion", "id", "source", "type", "time", "subject", "correlationid", "causationid", "idempotencykey", "schemaversion", "datacontenttype", "data"],
+  "properties": {
+    "specversion": { "const": "1.0" },
+    "id": { "type": "string", "minLength": 1 },
+    "source": { "const": "contentos.research" },
+    "type": { "const": "ai.research" },
+    "time": { "type": "string", "format": "date-time" },
+    "subject": { "type": "string" },
+    "correlationid": { "type": "string" },
+    "causationid": { "type": "string" },
+    "idempotencykey": { "type": "string" },
+    "schemaversion": { "const": "1" },
+    "datacontenttype": { "const": "application/json" },
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["researchJobId", "operationId", "topic"],
+      "properties": {
+        "researchJobId": { "type": "string" },
+        "operationId": { "type": "string" },
+        "topic": { "type": "string" },
+        "scopeNotes": { "type": ["string", "null"] }
+      }
+    }
+  }
+}

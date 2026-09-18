@@ -8,6 +8,7 @@ import { CatalogoPage } from "@/pages/catalogo-page"
 import { ClaimsPage } from "@/pages/claims-page"
 import { ConteudoPage } from "@/pages/conteudo-page"
 import { DashboardPage } from "@/pages/dashboard-page"
+import { ProfilePage } from "@/pages/profile-page"
 import { LoginPage } from "@/pages/login-page"
 import { PesquisaPage } from "@/pages/pesquisa-page"
 import { PublicacaoPage } from "@/pages/publicacao-page"
@@ -25,6 +26,7 @@ export function App() {
           <Route element={<RequireAuth />}>
             <Route element={<AppShell />}>
               <Route index element={<DashboardPage />} />
+              <Route path="perfil" element={<ProfilePage />} />
               <Route path="fontes" element={<SourcesPage />} />
               <Route path="fontes/:sourceId" element={<SourceDetailPage />} />
               <Route path="claims" element={<ClaimsPage />} />

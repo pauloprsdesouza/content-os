@@ -1,46 +1,41 @@
 asyncapi: 3.0.0
 info:
   title: Content OS Events
-  version: 0.0.0
-  description: Minimal Phase 0 event contract stub.
+  version: 1.0.0
+  description: >
+    CloudEvents published by the API outbox. Wire types stay ai.* so the
+    worker keeps binding. Versioned names are the next cutover, not this schema.
 defaultContentType: application/cloudevents+json
 channels:
-  aiJobs:
-    address: contentos.ai.jobs
+  aiCommands:
+    address: contentos.ai
     messages:
-      aiJobRequested:
-        $ref: "#/components/messages/AiJobRequested"
+      researchRequested:
+        $ref: "#/components/messages/ResearchRequested"
+      contentGenerateRequested:
+        $ref: "#/components/messages/ContentGenerateRequested"
+      contentReviewRequested:
+        $ref: "#/components/messages/ContentReviewRequested"
 operations:
-  requestAiJob:
+  publishAiCommand:
     action: send
     channel:
-      $ref: "#/channels/aiJobs"
+      $ref: "#/channels/aiCommands"
     messages:
-      - $ref: "#/channels/aiJobs/messages/aiJobRequested"
+      - $ref: "#/channels/aiCommands/messages/researchRequested"
+      - $ref: "#/channels/aiCommands/messages/contentGenerateRequested"
+      - $ref: "#/channels/aiCommands/messages/contentReviewRequested"
 components:
   messages:
-    AiJobRequested:
-      name: AiJobRequested
-      title: AI job requested
-      summary: Placeholder CloudEvent envelope for a future typed AI job.
+    ResearchRequested:
+      name: ai.research
       payload:
-        type: object
-        additionalProperties: false
-        required:
-          - specversion
-          - id
-          - source
-          - type
-        properties:
-          specversion:
-            type: string
-            const: "1.0"
-          id:
-            type: string
-            format: uuid
-          source:
-            type: string
-            format: uri-reference
-          type:
-            type: string
-            const: com.contentos.ai.job.requested.v1
+        $ref: ./schemas/ai-research-requested.schema.json
+    ContentGenerateRequested:
+      name: ai.content.generate
+      payload:
+        $ref: ./schemas/ai-content-generate-requested.schema.json
+    ContentReviewRequested:
+      name: ai.content.review
+      payload:
+        $ref: ./schemas/ai-content-review-requested.schema.json

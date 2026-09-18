@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contentos.local/schemas/ai-content-generate-requested.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["specversion", "id", "source", "type", "time", "subject", "correlationid", "causationid", "idempotencykey", "schemaversion", "datacontenttype", "data"],
+  "properties": {
+    "specversion": { "const": "1.0" },
+    "id": { "type": "string", "minLength": 1 },
+    "source": { "const": "contentos.content" },
+    "type": { "const": "ai.content.generate" },
+    "time": { "type": "string", "format": "date-time" },
+    "subject": { "type": "string" },
+    "correlationid": { "type": "string" },
+    "causationid": { "type": "string" },
+    "idempotencykey": { "type": "string" },
+    "schemaversion": { "const": "1" },
+    "datacontenttype": { "const": "application/json" },
+    "data": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["contentUnitId", "contentVersionId", "operationId"],
+      "properties": {
+        "contentUnitId": { "type": "string" },
+        "contentVersionId": { "type": "string" },
+        "operationId": { "type": "string" },
+        "title": { "type": "string" },
+        "brief": { "type": ["string", "null"] },
+        "requestReviewAfterGenerate": { "type": "boolean" }
+      }
+    }
+  }
+}

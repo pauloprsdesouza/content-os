@@ -10,6 +10,7 @@ namespace ContentOS.Infrastructure.Commerce;
 public sealed class HttpKiwifyOrderReconciler(
     IHttpClientFactory httpClientFactory,
     IOptions<CommerceOptions> options,
+    KiwifyAccessTokenSource tokens,
     ILogger<HttpKiwifyOrderReconciler> logger) : ICommerceOrderReconciler
 {
     public const string HttpClientName = "kiwify";
@@ -22,16 +23,26 @@ public sealed class HttpKiwifyOrderReconciler(
     {
         _ = provider;
         var commerce = options.Value;
-        if (string.IsNullOrWhiteSpace(commerce.ApiKey))
+        var hasOAuth = !string.IsNullOrWhiteSpace(commerce.ClientId)
+            && !string.IsNullOrWhiteSpace(commerce.ClientSecret ?? commerce.ApiKey);
+        if (!hasOAuth && string.IsNullOrWhiteSpace(commerce.ApiKey))
         {
             throw new CommerceProviderNotConfiguredException(
-                "Commerce:ApiKey is required when Commerce:UseStubProvider is false.");
+                "Commerce:ClientId and Commerce:ClientSecret are required when Commerce:UseStubProvider is false.");
         }
 
         var client = httpClientFactory.CreateClient(HttpClientName);
         client.BaseAddress = new Uri(commerce.BaseUrl.TrimEnd('/') + "/");
         client.Timeout = TimeSpan.FromSeconds(15);
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", commerce.ApiKey);
+        var bearer = hasOAuth
+            ? await tokens.GetAsync(cancellationToken)
+            : commerce.ApiKey!;
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", bearer);
+        if (!string.IsNullOrWhiteSpace(commerce.AccountId))
+        {
+            client.DefaultRequestHeaders.Remove("x-kiwify-account-id");
+            client.DefaultRequestHeaders.TryAddWithoutValidation("x-kiwify-account-id", commerce.AccountId);
+        }
 
         using var response = await client.GetAsync($"v1/sales/{Uri.EscapeDataString(externalId)}", cancellationToken);
         if (response.StatusCode == System.Net.HttpStatusCode.NotFound)

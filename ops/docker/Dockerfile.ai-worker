@@ -1,0 +1,7 @@
+FROM python:3.12-slim
+WORKDIR /app
+RUN useradd --create-home --uid 10001 appuser
+COPY src/ai-worker /app
+RUN pip install --no-cache-dir .
+USER appuser
+ENTRYPOINT ["content-os-ai-worker"]

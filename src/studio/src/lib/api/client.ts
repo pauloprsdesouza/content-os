@@ -12,6 +12,8 @@ export type ApiProblem = {
   status?: number
   code?: string
   currentVersion?: number
+  traceId?: string
+  errors?: Record<string, string[]>
 }
 
 export class ApiError extends Error {
@@ -48,6 +50,67 @@ async function ensureCsrfToken(): Promise<string> {
 
 export function clearCsrfToken() {
   csrfToken = null
+}
+
+function readString(value: unknown) {
+  return typeof value === "string" ? value : undefined
+}
+
+function userFacingMessage(status: number, problem: ApiProblem) {
+  if (status === 0) {
+    return "Sem conexão. O que você digitou permanece na tela."
+  }
+  if (status === 403) {
+    return "Você não tem permissão para esta ação."
+  }
+  if (status === 404) {
+    return "Recurso não encontrado."
+  }
+  if (status === 409) {
+    return problem.detail ?? "O estado mudou. Atualize os dados e tente de novo."
+  }
+  if (status === 412) {
+    return "Os dados estão desatualizados. Atualize antes de tentar de novo."
+  }
+  if (status === 422) {
+    return problem.detail ?? "Há campos inválidos."
+  }
+  if (status === 429) {
+    return "Muitas tentativas. Aguarde antes de tentar de novo."
+  }
+  if (status >= 500) {
+    return problem.traceId
+      ? `Falha no serviço. Correlação ${problem.traceId}.`
+      : "Falha no serviço. Tente de novo."
+  }
+  return problem.detail ?? problem.title ?? `HTTP ${status}`
+}
+
+async function readProblem(response: Response): Promise<ApiProblem> {
+  const fallback: ApiProblem = { title: response.statusText, status: response.status }
+  try {
+    const payload = (await response.json()) as Record<string, unknown>
+    const errors =
+      payload.errors && typeof payload.errors === "object"
+        ? (payload.errors as Record<string, string[]>)
+        : undefined
+    return {
+      title: readString(payload.title) ?? fallback.title,
+      detail: readString(payload.detail),
+      status: typeof payload.status === "number" ? payload.status : response.status,
+      code: readString(payload.code),
+      currentVersion: typeof payload.currentVersion === "number" ? payload.currentVersion : undefined,
+      traceId: readString(payload.traceId),
+      errors,
+    }
+  } catch {
+    return fallback
+  }
+}
+
+function fail(response: Response, problem: ApiProblem): never {
+  const message = userFacingMessage(response.status, problem)
+  throw new ApiError(response.status, { ...problem, detail: problem.detail ?? message, title: message })
 }
 
 type RequestOptions = {
@@ -99,21 +162,7 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
       }
     }
 
-    let problem: ApiProblem = { title: response.statusText, status: response.status }
-    try {
-      const payload = (await response.json()) as Record<string, unknown>
-      problem = {
-        title: typeof payload.title === "string" ? payload.title : problem.title,
-        detail: typeof payload.detail === "string" ? payload.detail : undefined,
-        status: typeof payload.status === "number" ? payload.status : response.status,
-        code: typeof payload.code === "string" ? payload.code : undefined,
-        currentVersion:
-          typeof payload.currentVersion === "number" ? payload.currentVersion : undefined,
-      }
-    } catch {
-      // keep fallback problem
-    }
-    throw new ApiError(response.status, problem)
+    fail(response, await readProblem(response))
   }
 
   if (response.headers.get("content-type")?.includes("application/json")) {
@@ -156,13 +205,7 @@ export async function apiRequestWithEtag<T>(
   })
 
   if (!response.ok) {
-    let problem: ApiProblem = { title: response.statusText, status: response.status }
-    try {
-      problem = (await response.json()) as ApiProblem
-    } catch {
-      // ignore
-    }
-    throw new ApiError(response.status, problem)
+    fail(response, await readProblem(response))
   }
 
   const data = response.status === 204 ? (undefined as T) : ((await response.json()) as T)

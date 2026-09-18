@@ -21,6 +21,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ContentOS.ArchitectureTests
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ContentOS.Domain.UnitTests", "..\..\tests\ContentOS.Domain.UnitTests\ContentOS.Domain.UnitTests.csproj", "{EE7011E0-EDAD-41CF-A6D4-38407839C6BD}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ContentOS.Application.UnitTests", "..\..\tests\ContentOS.Application.UnitTests\ContentOS.Application.UnitTests.csproj", "{D397436A-708C-489D-AB1E-14FA3BEE7FBA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -139,6 +141,18 @@ Global
 		{EE7011E0-EDAD-41CF-A6D4-38407839C6BD}.Release|x64.Build.0 = Release|Any CPU
 		{EE7011E0-EDAD-41CF-A6D4-38407839C6BD}.Release|x86.ActiveCfg = Release|Any CPU
 		{EE7011E0-EDAD-41CF-A6D4-38407839C6BD}.Release|x86.Build.0 = Release|Any CPU
+		{D397436A-708C-489D-AB1E-14FA3BEE7FBA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D397436A-708C-489D-AB1E-14FA3BEE7FBA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D397436A-708C-489D-AB1E-14FA3BEE7FBA}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{D397436A-708C-489D-AB1E-14FA3BEE7FBA}.Debug|x64.Build.0 = Debug|Any CPU
+		{D397436A-708C-489D-AB1E-14FA3BEE7FBA}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{D397436A-708C-489D-AB1E-14FA3BEE7FBA}.Debug|x86.Build.0 = Debug|Any CPU
+		{D397436A-708C-489D-AB1E-14FA3BEE7FBA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D397436A-708C-489D-AB1E-14FA3BEE7FBA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D397436A-708C-489D-AB1E-14FA3BEE7FBA}.Release|x64.ActiveCfg = Release|Any CPU
+		{D397436A-708C-489D-AB1E-14FA3BEE7FBA}.Release|x64.Build.0 = Release|Any CPU
+		{D397436A-708C-489D-AB1E-14FA3BEE7FBA}.Release|x86.ActiveCfg = Release|Any CPU
+		{D397436A-708C-489D-AB1E-14FA3BEE7FBA}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

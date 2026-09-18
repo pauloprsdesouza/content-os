@@ -65,6 +65,16 @@ public sealed class AiResultConsumerHostedService(
             autoDelete: false,
             cancellationToken: stoppingToken);
 
+        var deadLetterQueue = string.IsNullOrWhiteSpace(rabbit.AiResultsDeadLetterQueue)
+            ? $"{rabbit.AiResultsQueue}.dlq"
+            : rabbit.AiResultsDeadLetterQueue;
+        await channel.QueueDeclareAsync(
+            queue: deadLetterQueue,
+            durable: true,
+            exclusive: false,
+            autoDelete: false,
+            cancellationToken: stoppingToken);
+
         if (!string.IsNullOrWhiteSpace(rabbit.AiRequestsExchange))
         {
             await channel.ExchangeDeclareAsync(
@@ -88,13 +98,36 @@ public sealed class AiResultConsumerHostedService(
         {
             try
             {
-                await HandleMessageAsync(args.Body.ToArray(), stoppingToken);
+                var disposition = await HandleMessageAsync(args.Body.ToArray(), stoppingToken);
+                if (disposition == AiResultDisposition.DeadLetter)
+                {
+                    await PublishDeadLetterAsync(channel, deadLetterQueue, args.Body.ToArray(), stoppingToken);
+                }
+
+                if (disposition == AiResultDisposition.Retry && !args.Redelivered)
+                {
+                    await channel.BasicNackAsync(args.DeliveryTag, false, true, stoppingToken);
+                    return;
+                }
+
+                if (disposition == AiResultDisposition.Retry)
+                {
+                    await PublishDeadLetterAsync(channel, deadLetterQueue, args.Body.ToArray(), stoppingToken);
+                }
+
                 await channel.BasicAckAsync(args.DeliveryTag, false, stoppingToken);
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Failed to apply AI result; nacking without requeue.");
-                await channel.BasicNackAsync(args.DeliveryTag, false, false, stoppingToken);
+                logger.LogError(ex, "Failed to apply AI result.");
+                if (args.Redelivered)
+                {
+                    await PublishDeadLetterAsync(channel, deadLetterQueue, args.Body.ToArray(), stoppingToken);
+                    await channel.BasicAckAsync(args.DeliveryTag, false, stoppingToken);
+                    return;
+                }
+
+                await channel.BasicNackAsync(args.DeliveryTag, false, true, stoppingToken);
             }
         };
 
@@ -116,12 +149,27 @@ public sealed class AiResultConsumerHostedService(
         }
     }
 
-    private async Task HandleMessageAsync(byte[] body, CancellationToken cancellationToken)
+    private async Task<AiResultDisposition> HandleMessageAsync(byte[] body, CancellationToken cancellationToken)
     {
-        using var document = JsonDocument.Parse(Encoding.UTF8.GetString(body));
+        JsonDocument document;
+        try
+        {
+            document = JsonDocument.Parse(Encoding.UTF8.GetString(body));
+        }
+        catch (JsonException)
+        {
+            logger.LogWarning("AI result payload is not JSON; sending to dead-letter.");
+            return AiResultDisposition.DeadLetter;
+        }
+
+        using (document)
+        {
         var root = document.RootElement;
         var type = root.TryGetProperty("type", out var typeNode)
             ? typeNode.GetString()
+            : null;
+        var messageId = root.TryGetProperty("id", out var idNode)
+            ? idNode.GetString()
             : null;
         var idempotencyKey = root.TryGetProperty("idempotencykey", out var keyNode)
             ? keyNode.GetString() ?? string.Empty
@@ -129,12 +177,31 @@ public sealed class AiResultConsumerHostedService(
 
         if (string.IsNullOrWhiteSpace(type) || !root.TryGetProperty("data", out var data))
         {
-            logger.LogWarning("Ignoring AI result without type/data.");
-            return;
+            logger.LogWarning("AI result missing type or data; sending to dead-letter.");
+            return AiResultDisposition.DeadLetter;
+        }
+
+        if (string.IsNullOrWhiteSpace(messageId))
+        {
+            messageId = idempotencyKey;
+        }
+
+        if (string.IsNullOrWhiteSpace(messageId))
+        {
+            logger.LogWarning("AI result missing id; sending to dead-letter.");
+            return AiResultDisposition.DeadLetter;
         }
 
         await using var scope = scopeFactory.CreateAsyncScope();
         var services = scope.ServiceProvider;
+        var inbox = services.GetRequiredService<ProcessedAiResultStore>();
+        if (await inbox.ExistsAsync(messageId, cancellationToken))
+        {
+            logger.LogInformation("Duplicate AI result {MessageId} ignored.", messageId);
+            return AiResultDisposition.Ack;
+        }
+
+        inbox.Remember(messageId, type);
 
         switch (type)
         {
@@ -150,11 +217,29 @@ public sealed class AiResultConsumerHostedService(
                 {
                     foreach (var item in findingsNode.EnumerateArray())
                     {
+                        Guid? snapshotId = null;
+                        if (item.TryGetProperty("sourceSnapshotId", out var snapshotNode)
+                            && Guid.TryParse(snapshotNode.GetString(), out var parsedSnapshot))
+                        {
+                            snapshotId = parsedSnapshot;
+                        }
+
+                        Guid? findingId = null;
+                        if (item.TryGetProperty("findingId", out var findingNode)
+                            && Guid.TryParse(findingNode.GetString(), out var parsedFinding))
+                        {
+                            findingId = parsedFinding;
+                        }
+
                         findings.Add(new ResearchFindingInput(
                             item.GetProperty("statement").GetString() ?? string.Empty,
                             item.TryGetProperty("confidence", out var confidence)
                                 ? confidence.GetDecimal()
-                                : 0.5m));
+                                : 0.5m,
+                            snapshotId,
+                            item.TryGetProperty("locator", out var locatorNode) ? locatorNode.GetString() : null,
+                            item.TryGetProperty("extractionMethod", out var methodNode) ? methodNode.GetString() : null,
+                            findingId));
                     }
                 }
 
@@ -235,8 +320,27 @@ public sealed class AiResultConsumerHostedService(
             }
             default:
                 logger.LogWarning("Unhandled AI result type {Type}", type);
-                break;
+                return AiResultDisposition.DeadLetter;
         }
+
+        return AiResultDisposition.Ack;
+        }
+    }
+
+    private async Task PublishDeadLetterAsync(
+        IChannel channel,
+        string queue,
+        byte[] body,
+        CancellationToken cancellationToken)
+    {
+        logger.LogWarning("AI result moved to dead-letter queue {Queue}. Body is not logged.", queue);
+        await channel.BasicPublishAsync(
+            exchange: string.Empty,
+            routingKey: queue,
+            mandatory: false,
+            basicProperties: new BasicProperties { DeliveryMode = DeliveryModes.Persistent },
+            body: body,
+            cancellationToken: cancellationToken);
     }
 
     private static Guid GetGuid(JsonElement data, string name) =>

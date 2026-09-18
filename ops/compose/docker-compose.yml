@@ -54,6 +54,57 @@ services:
       retries: 3
     restart: unless-stopped
 
+  migrate:
+    build:
+      context: ../..
+      dockerfile: ops/docker/Dockerfile.migrations
+    environment:
+      ConnectionStrings__Platform: Host=postgres;Port=5432;Database=${POSTGRES_DB:-contentos};Username=${POSTGRES_USER:-contentos};Password=${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    build:
+      context: ../..
+      dockerfile: ops/docker/Dockerfile.api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__Platform: Host=postgres;Port=5432;Database=${POSTGRES_DB:-contentos};Username=${POSTGRES_USER:-contentos};Password=${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      RabbitMq__Uri: amqp://${RABBITMQ_USER:-contentos}:${RABBITMQ_PASSWORD:?Set RABBITMQ_PASSWORD in .env}@rabbitmq:5672/
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+
+  ai-worker:
+    build:
+      context: ../..
+      dockerfile: ops/docker/Dockerfile.ai-worker
+    environment:
+      CONTENT_OS_RABBITMQ_URL: amqp://${RABBITMQ_USER:-contentos}:${RABBITMQ_PASSWORD:?Set RABBITMQ_PASSWORD in .env}@rabbitmq:5672/
+      CONTENT_OS_API_BASE_URL: http://api:8080
+      CONTENT_OS_AI_STUB: ${CONTENT_OS_AI_STUB:-true}
+    depends_on:
+      api:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+
+  studio:
+    build:
+      context: ../..
+      dockerfile: ops/docker/Dockerfile.studio
+    ports:
+      - "${STUDIO_PORT:-8080}:8080"
+    depends_on:
+      - api
+    restart: unless-stopped
+
 volumes:
   postgres-data:
   rabbitmq-data:

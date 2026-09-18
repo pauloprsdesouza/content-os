@@ -136,6 +136,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IDashboardSummaryQuery, EfDashboardSummaryQuery>();
         services.AddScoped<IAiCommandPublisher, DurableAiCommandPublisher>();
         services.AddSingleton<RabbitMqAiCommandPublisher>();
+        services.AddScoped<ProcessedAiResultStore>();
         services.AddHostedService<OutboxDispatcherHostedService>();
         services.AddScoped<IChangeCommitter, EfChangeCommitter>();
         services.AddScoped<ISourceRepository, SourceRepository>();
@@ -179,6 +180,7 @@ public static class InfrastructureServiceCollectionExtensions
                 : serviceProvider.GetRequiredService<HttpKiwifyOrderReconciler>();
         });
         services.AddScoped<StubCommerceOrderReconciler>();
+        services.AddSingleton<KiwifyAccessTokenSource>();
         services.AddScoped<HttpKiwifyOrderReconciler>();
         services.AddScoped<CreateSourceHandler>();
         services.AddScoped<GetSourcesHandler>();
