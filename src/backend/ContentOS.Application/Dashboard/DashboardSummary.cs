@@ -1,6 +1,6 @@
-namespace ContentOS.Contracts.Dashboard;
+namespace ContentOS.Application.Dashboard;
 
-public sealed record DashboardSummaryResponse(
+public sealed record DashboardSummary(
     long SourcesTotal,
     long ClaimsPendingReview,
     long ResearchJobsActive,

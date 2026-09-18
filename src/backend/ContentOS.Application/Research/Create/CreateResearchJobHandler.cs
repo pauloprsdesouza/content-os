@@ -48,27 +48,27 @@ public sealed class CreateResearchJobHandler(
 
         jobs.Add(job);
         operations.Add(operation);
+
+        await aiCommands.PublishAsync(
+            new AiCloudEventEnvelope(
+                Id: ids.NewId().ToString("N"),
+                Source: "contentos.research",
+                Type: AiMessageTypes.Research,
+                Time: now,
+                Subject: $"research-job/{jobId}",
+                CorrelationId: operationId.ToString("N"),
+                IdempotencyKey: $"research:{jobId}:attempt:{job.AttemptCount}",
+                SchemaVersion: "1",
+                Data: new
+                {
+                    researchJobId = jobId,
+                    operationId,
+                    topic = job.Topic,
+                    scopeNotes = job.ScopeNotes
+                }),
+            cancellationToken);
+
         await changes.CommitAsync(cancellationToken);
-
-        var envelope = new AiCloudEventEnvelope(
-            Id: ids.NewId().ToString("N"),
-            Source: "contentos.api",
-            Type: AiMessageTypes.Research,
-            Time: now,
-            Subject: $"research-job/{jobId}",
-            CorrelationId: operationId.ToString("N"),
-            IdempotencyKey: $"research:{jobId}:attempt:{job.AttemptCount}",
-            SchemaVersion: "1",
-            Data: new
-            {
-                researchJobId = jobId,
-                operationId,
-                topic = job.Topic,
-                scopeNotes = job.ScopeNotes
-            });
-
-        await aiCommands.PublishAsync(envelope, cancellationToken);
-
         return CreateResearchJobResult.Created(jobId, operationId);
     }
 }

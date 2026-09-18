@@ -42,6 +42,8 @@ public sealed class Claim
 
     public Guid? SupersededByClaimId { get; private set; }
 
+    public Guid? OriginResearchFindingId { get; private set; }
+
     public DateTimeOffset CreatedAt { get; private set; }
 
     public DateTimeOffset UpdatedAt { get; private set; }
@@ -62,6 +64,21 @@ public sealed class Claim
         ArgumentException.ThrowIfNullOrWhiteSpace(statement);
 
         return new Claim(id, statement.Trim(), confidence, createdAt);
+    }
+
+    public void AttachOrigin(Guid researchFindingId)
+    {
+        if (researchFindingId == Guid.Empty)
+        {
+            throw new ArgumentException("Research finding id is required.", nameof(researchFindingId));
+        }
+
+        if (OriginResearchFindingId is not null && OriginResearchFindingId != researchFindingId)
+        {
+            throw new InvalidOperationException("Claim origin is already set.");
+        }
+
+        OriginResearchFindingId = researchFindingId;
     }
 
     public void LinkEvidence(Guid evidenceId, DateTimeOffset linkedAt)

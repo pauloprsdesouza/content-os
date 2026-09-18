@@ -43,12 +43,10 @@ public sealed class RequestContentReviewHandler(
                     version.Id,
                     command.RequestedByUserId,
                     now));
-                await changes.CommitAsync(cancellationToken);
-
                 await aiCommands.PublishAsync(
                     new AiCloudEventEnvelope(
                         Id: ids.NewId().ToString("N"),
-                        Source: "contentos.api",
+                        Source: "contentos.content",
                         Type: AiMessageTypes.ContentGenerate,
                         Time: now,
                         Subject: $"content-version/{version.Id}",
@@ -63,6 +61,7 @@ public sealed class RequestContentReviewHandler(
                             requestReviewAfterGenerate = true
                         }),
                     cancellationToken);
+                await changes.CommitAsync(cancellationToken);
 
                 return RequestContentReviewResult.Accepted(operationId);
             }
@@ -78,12 +77,10 @@ public sealed class RequestContentReviewHandler(
                     version.Id,
                     command.RequestedByUserId,
                     now));
-                await changes.CommitAsync(cancellationToken);
-
                 await aiCommands.PublishAsync(
                     new AiCloudEventEnvelope(
                         Id: ids.NewId().ToString("N"),
-                        Source: "contentos.api",
+                        Source: "contentos.content",
                         Type: AiMessageTypes.ContentReview,
                         Time: now,
                         Subject: $"content-version/{version.Id}",
@@ -97,6 +94,7 @@ public sealed class RequestContentReviewHandler(
                             bodyMarkdown = version.BodyMarkdown
                         }),
                     cancellationToken);
+                await changes.CommitAsync(cancellationToken);
 
                 return RequestContentReviewResult.Accepted(operationId);
             }

@@ -46,6 +46,13 @@ public sealed class ClaimConfiguration : IEntityTypeConfiguration<Claim>
         builder.Property(claim => claim.SupersededByClaimId)
             .HasColumnName("superseded_by_claim_id");
 
+        builder.Property(claim => claim.OriginResearchFindingId)
+            .HasColumnName("origin_research_finding_id");
+
+        builder.HasIndex(claim => claim.OriginResearchFindingId)
+            .IsUnique()
+            .HasFilter("origin_research_finding_id IS NOT NULL");
+
         builder.Property(claim => claim.CreatedAt)
             .HasColumnName("created_at");
 

@@ -28,4 +28,10 @@ public sealed class CommerceOptions
     /// Fallback edition when the webhook payload does not map to a catalog id.
     /// </summary>
     public Guid? DefaultEditionId { get; init; }
+
+    /// <summary>
+    /// Explicit map: kiwifyProductId=contentOsProductId|editionId separated by semicolons.
+    /// Required in production. No silent default product fallback.
+    /// </summary>
+    public string? ProductMappings { get; init; }
 }

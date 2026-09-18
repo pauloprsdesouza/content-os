@@ -9,4 +9,8 @@ public interface IClaimRepository
         CancellationToken cancellationToken = default);
 
     void Add(Claim claim);
+
+    Task<Claim?> FindByOriginAsync(
+        Guid researchFindingId,
+        CancellationToken cancellationToken = default);
 }

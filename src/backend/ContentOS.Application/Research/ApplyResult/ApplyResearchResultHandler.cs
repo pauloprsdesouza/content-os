@@ -1,3 +1,4 @@
+using ContentOS.Application.Knowledge.Claims.Promote;
 using ContentOS.Application.Operations.Ports;
 using ContentOS.Application.Persistence;
 using ContentOS.Application.Research.Ports;
@@ -12,7 +13,8 @@ public sealed class ApplyResearchResultHandler(
     IOperationRepository operations,
     IIdGenerator ids,
     TimeProvider clock,
-    IChangeCommitter changes)
+    IChangeCommitter changes,
+    PromoteResearchFindingsHandler promoter)
 {
     public async Task<ApplyResearchResultResult> HandleAsync(
         ApplyResearchResultCommand command,
@@ -63,15 +65,31 @@ public sealed class ApplyResearchResultHandler(
         }
 
         var findings = command.Findings
-            .Select(finding => ResearchFinding.Create(
-                ids.NewId(),
-                job.Id,
-                finding.Statement,
-                finding.Confidence,
-                now))
+            .Select(finding =>
+            {
+                var findingId = finding.FindingId ?? ids.NewId();
+                return (Input: finding, Entity: ResearchFinding.Create(
+                    findingId,
+                    job.Id,
+                    finding.Statement,
+                    finding.Confidence,
+                    now));
+            })
             .ToList();
 
-        job.MarkAwaitingKnowledgeReview(findings, now);
+        await promoter.HandleAsync(
+            new PromoteResearchFindingsCommand(
+                job.Id,
+                findings.Select(item => new PromoteResearchFindingItem(
+                    item.Entity.Id,
+                    item.Input.Statement,
+                    item.Input.Confidence,
+                    item.Input.SourceSnapshotId,
+                    item.Input.Locator,
+                    item.Input.ExtractionMethod)).ToList()),
+            cancellationToken);
+
+        job.MarkAwaitingKnowledgeReview(findings.Select(item => item.Entity).ToList(), now);
         operation.MarkSucceeded(now);
         await changes.CommitAsync(cancellationToken);
         return ApplyResearchResultResult.Applied();

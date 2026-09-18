@@ -63,14 +63,13 @@ public sealed class CreateContentUnitHandler(
 
         units.Add(unit);
         versions.Add(version);
-        await changes.CommitAsync(cancellationToken);
 
         if (command.QueueGeneration && operationId is not null)
         {
             await aiCommands.PublishAsync(
                 new AiCloudEventEnvelope(
                     Id: ids.NewId().ToString("N"),
-                    Source: "contentos.api",
+                    Source: "contentos.content",
                     Type: AiMessageTypes.ContentGenerate,
                     Time: now,
                     Subject: $"content-version/{versionId}",
@@ -87,6 +86,8 @@ public sealed class CreateContentUnitHandler(
                     }),
                 cancellationToken);
         }
+
+        await changes.CommitAsync(cancellationToken);
 
         return CreateContentUnitResult.Created(unitId, versionId, operationId);
     }

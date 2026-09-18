@@ -15,4 +15,12 @@ public sealed class ClaimRepository(PlatformDbContext dbContext) : IClaimReposit
             .FirstOrDefaultAsync(claim => claim.Id == claimId, cancellationToken);
 
     public void Add(Claim claim) => dbContext.Set<Claim>().Add(claim);
+
+    public Task<Claim?> FindByOriginAsync(
+        Guid researchFindingId,
+        CancellationToken cancellationToken = default) =>
+        dbContext.Set<Claim>()
+            .FirstOrDefaultAsync(
+                claim => claim.OriginResearchFindingId == researchFindingId,
+                cancellationToken);
 }

@@ -8,6 +8,7 @@ using ContentOS.Api.Learning;
 using ContentOS.Api.Operations;
 using ContentOS.Api.Publication;
 using ContentOS.Api.Research;
+using ContentOS.Application.Dashboard;
 using ContentOS.Contracts.Auth;
 using ContentOS.Contracts.Dashboard;
 using ContentOS.Domain.Identity;
@@ -174,6 +175,20 @@ auth.MapPost(
 
 api.MapGet(
     "/dashboard/summary",
-    () => Results.Ok(new DashboardSummaryResponse(0, 0, 0, 0)));
+    async (IDashboardSummaryQuery query, CancellationToken cancellationToken) =>
+    {
+        var summary = await query.GetAsync(cancellationToken);
+        return Results.Ok(new DashboardSummaryResponse(
+            summary.SourcesTotal,
+            summary.ClaimsPendingReview,
+            summary.ResearchJobsActive,
+            summary.ContentVersionsPendingApproval,
+            summary.PublicationPackagesReady,
+            summary.PurchasesConfirmed,
+            summary.LearnersActive,
+            summary.OutcomesCompleted,
+            summary.GeneratedAt));
+    })
+    .RequireAuthorization();
 
 app.Run();
