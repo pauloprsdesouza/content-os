@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useState } from "react"
-import { Link, useParams } from "react-router"
+import { Link, useNavigate, useParams } from "react-router"
 import { toast } from "sonner"
 
 import { EmptyState, ErrorState, LoadingState } from "@/components/page-states"
@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { ApiError } from "@/lib/api/client"
 import {
+  captureExistingSource,
   createSnapshot,
   getSource,
   listSnapshots,
@@ -30,7 +31,9 @@ export function SourceDetailPage() {
   const [snapshots, setSnapshots] = useState<SnapshotItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const navigate = useNavigate()
   const [creating, setCreating] = useState(false)
+  const [capturingWeb, setCapturingWeb] = useState(false)
 
   async function load() {
     setLoading(true)
@@ -55,6 +58,24 @@ export function SourceDetailPage() {
       void load()
     }
   }, [sourceId])
+
+  async function handleCaptureWeb() {
+    setCapturingWeb(true)
+    try {
+      const captured = await captureExistingSource(sourceId, { mode: "web" })
+      toast.success("Página capturada")
+      await load()
+      navigate(`/pesquisa?source=${captured.sourceId}&snapshot=${captured.snapshotId}`)
+    } catch (requestError) {
+      toast.error(
+        requestError instanceof ApiError
+          ? requestError.message
+          : "Não foi possível baixar a página.",
+      )
+    } finally {
+      setCapturingWeb(false)
+    }
+  }
 
   async function handleCreateSnapshot(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -110,6 +131,11 @@ export function SourceDetailPage() {
       <Card>
         <CardContent className="space-y-4 p-6">
           <h3 className="m-0 text-lg font-semibold">Capturar snapshot</h3>
+          {source.canonicalUri.startsWith("http") && (
+            <Button type="button" disabled={capturingWeb} onClick={() => void handleCaptureWeb()}>
+              {capturingWeb ? "Baixando…" : "Capturar esta URL"}
+            </Button>
+          )}
           <form className="space-y-3" onSubmit={handleCreateSnapshot}>
             <div className="space-y-2">
               <Label htmlFor="content">Conteúdo textual</Label>

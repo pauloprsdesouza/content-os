@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useState } from "react"
-import { Link } from "react-router"
+import { Link, useSearchParams } from "react-router"
 import { toast } from "sonner"
 
 import { EmptyState, ErrorState, LoadingState } from "@/components/page-states"
@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ApiError } from "@/lib/api/client"
 import { listSnapshots, listSources, type SnapshotItem, type SourceListItem } from "@/lib/api/knowledge"
-import { pollOperationUntilSettled } from "@/lib/api/operations"
+import { watchOperation } from "@/lib/api/operations"
 import {
   createResearchJob,
   getResearchJob,
@@ -38,7 +38,9 @@ export function PesquisaPage() {
   const [operationStatus, setOperationStatus] = useState<string | null>(null)
   const [sources, setSources] = useState<SourceListItem[]>([])
   const [snapshots, setSnapshots] = useState<SnapshotItem[]>([])
-  const [sourceId, setSourceId] = useState("")
+  const [searchParams] = useSearchParams()
+  const [sourceId, setSourceId] = useState(searchParams.get("source") ?? "")
+  const [snapshotId, setSnapshotId] = useState(searchParams.get("snapshot") ?? "")
 
   async function loadJobs(preferId?: string | null) {
     setLoading(true)
@@ -93,6 +95,62 @@ export function PesquisaPage() {
       .catch(() => setSnapshots([]))
   }, [sourceId])
 
+  useEffect(() => {
+    const operationId = detail?.operationId
+    const jobId = detail?.id
+    const status = detail?.status
+    if (!operationId || !jobId || !status) {
+      return
+    }
+    if (
+      status === "AwaitingKnowledgeReview" ||
+      status === "Completed" ||
+      status === "Failed" ||
+      status === "Cancelled"
+    ) {
+      return
+    }
+
+    const controller = new AbortController()
+    void watchOperation(
+      operationId,
+      (operation) => setOperationStatus(operation.status),
+      controller.signal,
+    )
+      .then(async (operation) => {
+        setOperationStatus(operation.status)
+        if (operation.status === "Succeeded") {
+          toast.success("Pesquisa concluída (aguardando revisão de findings)")
+        } else if (operation.status === "Failed") {
+          toast.error(operation.errorMessage ?? "Falha na pesquisa")
+        }
+
+        const [job, jobFindings] = await Promise.all([
+          getResearchJob(jobId),
+          getResearchJobFindings(jobId),
+        ])
+        if (controller.signal.aborted) {
+          return
+        }
+        setDetail(job)
+        setFindings(jobFindings)
+        setJobs((current) =>
+          current.map((item) =>
+            item.id === job.id
+              ? { ...item, status: job.status, updatedAt: job.updatedAt }
+              : item,
+          ),
+        )
+      })
+      .catch((requestError: unknown) => {
+        if (requestError instanceof DOMException && requestError.name === "AbortError") {
+          return
+        }
+      })
+
+    return () => controller.abort()
+  }, [detail?.id, detail?.operationId, detail?.status])
+
   async function handleCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setCreating(true)
@@ -115,13 +173,6 @@ export function PesquisaPage() {
       })
       toast.success("Pesquisa enfileirada")
       setOperationStatus("Accepted")
-      const operation = await pollOperationUntilSettled(accepted.operationId)
-      setOperationStatus(operation.status)
-      if (operation.status === "Succeeded") {
-        toast.success("Pesquisa concluída (aguardando revisão de findings)")
-      } else if (operation.status === "Failed") {
-        toast.error(operation.errorMessage ?? "Falha na pesquisa")
-      }
       event.currentTarget.reset()
       await loadJobs(accepted.subjectId)
     } catch (requestError) {
@@ -186,7 +237,8 @@ export function PesquisaPage() {
                 name="sourceSnapshotId"
                 required
                 className="flex h-9 w-full rounded-[var(--radius-md)] border border-[var(--border)] bg-transparent px-3 text-sm"
-                defaultValue=""
+                value={snapshotId}
+                onChange={(event) => setSnapshotId(event.target.value)}
               >
                 <option value="" disabled>
                   {snapshots.length === 0 ? "Nenhum snapshot nesta fonte" : "Selecione"}

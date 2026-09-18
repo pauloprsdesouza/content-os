@@ -52,6 +52,33 @@ export function clearCsrfToken() {
   csrfToken = null
 }
 
+export async function apiFormRequest<T>(
+  path: string,
+  body: FormData,
+  allowRetry = true,
+): Promise<T> {
+  const headers: Record<string, string> = {
+    Accept: "application/json",
+    "X-CSRF-TOKEN": await ensureCsrfToken(),
+    "Idempotency-Key": crypto.randomUUID(),
+  }
+  const response = await fetch(path, {
+    method: "POST",
+    credentials: "include",
+    headers,
+    body,
+  })
+  if (!response.ok) {
+    const problem = await readProblem(response)
+    if (allowRetry && problem.code === "ANTIFORGERY_INVALID") {
+      clearCsrfToken()
+      return apiFormRequest(path, body, false)
+    }
+    fail(response, problem)
+  }
+  return (await response.json()) as T
+}
+
 function readString(value: unknown) {
   return typeof value === "string" ? value : undefined
 }

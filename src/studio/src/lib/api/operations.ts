@@ -1,4 +1,4 @@
-import { apiRequest, type PageResponse } from "@/lib/api/client"
+import { ApiError, type ApiProblem } from "@/lib/api/client"
 
 export type OperationDetail = {
   id: string
@@ -11,28 +11,54 @@ export type OperationDetail = {
   updatedAt: string
 }
 
-export function getOperation(operationId: string) {
-  return apiRequest<OperationDetail>(`/api/v1/operations/${operationId}`)
-}
+const terminalStatuses = new Set(["Succeeded", "Failed", "Cancelled"])
 
-export async function pollOperationUntilSettled(
+export function watchOperation(
   operationId: string,
-  options?: { intervalMs?: number; maxAttempts?: number },
-) {
-  const intervalMs = options?.intervalMs ?? 1500
-  const maxAttempts = options?.maxAttempts ?? 40
-
-  for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    const operation = await getOperation(operationId)
-    if (
-      operation.status === "Succeeded" ||
-      operation.status === "Failed" ||
-      operation.status === "Cancelled"
-    ) {
-      return operation
+  onUpdate: (operation: OperationDetail) => void,
+  signal?: AbortSignal,
+): Promise<OperationDetail> {
+  return new Promise((resolve, reject) => {
+    if (signal?.aborted) {
+      reject(new DOMException("Aborted", "AbortError"))
+      return
     }
-    await new Promise((resolve) => setTimeout(resolve, intervalMs))
-  }
 
-  return getOperation(operationId)
+    const source = new EventSource(`/api/v1/operations/${operationId}/events`, {
+      withCredentials: true,
+    })
+    let settled = false
+
+    const finish = (error?: Error, operation?: OperationDetail) => {
+      if (settled) {
+        return
+      }
+      settled = true
+      source.close()
+      signal?.removeEventListener("abort", onAbort)
+      if (error) {
+        reject(error)
+        return
+      }
+      resolve(operation as OperationDetail)
+    }
+
+    const onAbort = () => finish(new DOMException("Aborted", "AbortError"))
+    signal?.addEventListener("abort", onAbort, { once: true })
+
+    source.addEventListener("operation", (message) => {
+      const operation = JSON.parse((message as MessageEvent<string>).data) as OperationDetail
+      onUpdate(operation)
+      if (terminalStatuses.has(operation.status)) {
+        finish(undefined, operation)
+      }
+    })
+
+    source.onerror = () => {
+      if (source.readyState === EventSource.CLOSED) {
+        const problem: ApiProblem = { title: "A conexão de status caiu." }
+        finish(new ApiError(0, problem))
+      }
+    }
+  })
 }

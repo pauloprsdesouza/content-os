@@ -17,6 +17,7 @@ from ai_worker.contracts.messages import (
 )
 from ai_worker.model_gateway.gateway import ModelGateway
 from ai_worker.settings.config import WorkerSettings
+from ai_worker.tools.knowledge_client import KnowledgeToolClient
 
 logger = structlog.get_logger(__name__)
 
@@ -32,7 +33,7 @@ class AiCommandConsumer:
         self._settings = settings
         self._ledger = ProcessingLedger(settings.ledger_path)
         self._gateway = ModelGateway(settings)
-        self._agent = StubAgent(self._gateway)
+        self._agent = StubAgent(self._gateway, KnowledgeToolClient(settings))
         self._connection: aio_pika.RobustConnection | None = None
         self._channel: aio_pika.Channel | None = None
 

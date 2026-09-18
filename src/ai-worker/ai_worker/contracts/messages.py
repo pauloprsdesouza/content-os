@@ -26,6 +26,7 @@ class ResearchCommandData(BaseModel):
     topic: str
     scope_notes: str | None = Field(default=None, alias="scopeNotes")
     source_snapshot_id: UUID = Field(alias="sourceSnapshotId")
+    content_hash: str = Field(alias="contentHash")
 
     model_config = {"populate_by_name": True}
 

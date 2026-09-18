@@ -1,4 +1,4 @@
-import { apiRequest, apiRequestWithEtag, type PageResponse } from "@/lib/api/client"
+import { apiFormRequest, apiRequest, apiRequestWithEtag, type PageResponse } from "@/lib/api/client"
 
 export type SourceListItem = {
   id: string
@@ -83,6 +83,44 @@ export function listSnapshots(sourceId: string, page = 1, pageSize = 25) {
   return apiRequest<PageResponse<SnapshotItem>>(
     `/api/v1/sources/${sourceId}/snapshots?page=${page}&pageSize=${pageSize}`,
   )
+}
+
+export type CaptureResult = {
+  sourceId: string
+  snapshotId: string
+  contentHash: string
+  sourceCreated: boolean
+}
+
+export function captureSource(input: {
+  mode: "web" | "text"
+  displayName?: string
+  location?: string
+  text?: string
+}) {
+  return apiRequest<CaptureResult>("/api/v1/source-captures", {
+    method: "POST",
+    body: input,
+    idempotencyKey: crypto.randomUUID(),
+  })
+}
+
+export function captureExistingSource(
+  sourceId: string,
+  input: { mode: "web" | "text"; text?: string },
+) {
+  return apiRequest<CaptureResult>(`/api/v1/sources/${sourceId}/captures`, {
+    method: "POST",
+    body: input,
+    idempotencyKey: crypto.randomUUID(),
+  })
+}
+
+export function uploadSourceFile(displayName: string, file: File) {
+  const body = new FormData()
+  body.set("displayName", displayName)
+  body.set("file", file)
+  return apiFormRequest<CaptureResult>("/api/v1/source-captures/files", body)
 }
 
 export function createSnapshot(

@@ -20,5 +20,11 @@ public sealed class SourceRepository(PlatformDbContext dbContext) : ISourceRepos
         dbContext.Set<Source>()
             .FirstOrDefaultAsync(source => source.Id == sourceId, cancellationToken);
 
+    public Task<Source?> GetByCanonicalUriAsync(
+        SourceUri canonicalUri,
+        CancellationToken cancellationToken = default) =>
+        dbContext.Set<Source>()
+            .FirstOrDefaultAsync(source => source.CanonicalUri == canonicalUri, cancellationToken);
+
     public void Add(Source source) => dbContext.Set<Source>().Add(source);
 }

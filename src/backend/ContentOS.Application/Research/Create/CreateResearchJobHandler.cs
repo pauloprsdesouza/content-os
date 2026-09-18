@@ -13,6 +13,7 @@ public sealed class CreateResearchJobHandler(
     IResearchJobRepository jobs,
     IOperationRepository operations,
     ISnapshotExistsQuery snapshots,
+    ISourceSnapshotRepository snapshotRepository,
     IAiCommandPublisher aiCommands,
     IIdGenerator ids,
     TimeProvider clock,
@@ -29,6 +30,12 @@ public sealed class CreateResearchJobHandler(
 
         if (command.SourceSnapshotId == Guid.Empty
             || !await snapshots.ExistsAsync(command.SourceSnapshotId, cancellationToken))
+        {
+            return CreateResearchJobResult.Invalid("RESEARCH_SNAPSHOT_REQUIRED");
+        }
+
+        var snapshot = await snapshotRepository.GetByIdAsync(command.SourceSnapshotId, cancellationToken);
+        if (snapshot is null)
         {
             return CreateResearchJobResult.Invalid("RESEARCH_SNAPSHOT_REQUIRED");
         }
@@ -73,7 +80,8 @@ public sealed class CreateResearchJobHandler(
                     operationId,
                     topic = job.Topic,
                     scopeNotes = job.ScopeNotes,
-                    sourceSnapshotId = command.SourceSnapshotId
+                    sourceSnapshotId = command.SourceSnapshotId,
+                    contentHash = snapshot.ContentHash.Value
                 }),
             cancellationToken);
 

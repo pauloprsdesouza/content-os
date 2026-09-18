@@ -18,6 +18,7 @@ using ContentOS.Application.Content.Ports;
 using ContentOS.Application.Content.RequestChanges;
 using ContentOS.Application.Content.RequestReview;
 using ContentOS.Application.Content.UpdateVersion;
+using ContentOS.Application.Knowledge.Capture;
 using ContentOS.Application.Knowledge.Claims.Approve;
 using ContentOS.Application.Knowledge.Claims.CreateForReview;
 using ContentOS.Application.Knowledge.Claims.GetClaim;
@@ -37,6 +38,7 @@ using ContentOS.Application.Learning.SubmitCapstone;
 using ContentOS.Application.Messaging;
 using ContentOS.Application.Operations.Get;
 using ContentOS.Application.Operations.Ports;
+using ContentOS.Application.Operations.Progress;
 using ContentOS.Application.Persistence;
 using ContentOS.Application.Publication.ConfirmPublication;
 using ContentOS.Application.Publication.CreatePackage;
@@ -95,9 +97,20 @@ public static class InfrastructureServiceCollectionExtensions
             .Bind(configuration.GetSection(SecurityOptions.SectionName));
         services.AddOptions<CommerceOptions>()
             .Bind(configuration.GetSection(CommerceOptions.SectionName));
+        services.AddOptions<IngestOptions>()
+            .Bind(configuration.GetSection(IngestOptions.SectionName))
+            .Validate(options => options.TimeoutSeconds is >= 1 and <= 60)
+            .Validate(options => options.MaxBytes is >= 1024 and <= 5_000_000)
+            .ValidateOnStart();
 
         services.AddOptions<DevelopmentSeedOptions>()
             .Bind(configuration.GetSection(DevelopmentSeedOptions.SectionName));
+
+        services.AddHttpClient(WebPageSourceCapture.HttpClientName, client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(60);
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("ContentOS-Capture/1");
+        }).ConfigurePrimaryHttpMessageHandler(WebPageSourceCapture.CreateHandler);
 
         services.AddHttpClient(HttpKiwifyOrderReconciler.HttpClientName, (sp, client) =>
         {
@@ -131,6 +144,7 @@ public static class InfrastructureServiceCollectionExtensions
             .AddEntityFrameworkStores<PlatformDbContext>();
 
         services.AddSingleton(TimeProvider.System);
+        services.AddSingleton<IOperationProgress, OperationProgressBroker>();
         services.AddSingleton<IIdGenerator, UuidV7IdGenerator>();
         services.AddSingleton<IBlobStore, FileSystemBlobStore>();
         services.AddScoped<IMessagePublisher, WolverineMessagePublisher>();
@@ -150,6 +164,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<ISnapshotsQuery, SnapshotsQuery>();
         services.AddScoped<IClaimReviewQueueQuery, ClaimReviewQueueQuery>();
         services.AddScoped<ISnapshotByHashQuery, SnapshotByHashQuery>();
+        services.AddScoped<ISnapshotExcerptQuery, SnapshotExcerptQuery>();
         services.AddScoped<IResearchJobRepository, ResearchJobRepository>();
         services.AddScoped<IResearchJobsQuery, ResearchJobsQuery>();
         services.AddScoped<IContentUnitRepository, ContentUnitRepository>();
@@ -183,6 +198,10 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<StubCommerceOrderReconciler>();
         services.AddSingleton<KiwifyAccessTokenSource>();
         services.AddScoped<HttpKiwifyOrderReconciler>();
+        services.AddScoped<ISourceCapture, WebPageSourceCapture>();
+        services.AddScoped<ISourceCapture, PastedTextSourceCapture>();
+        services.AddScoped<ISourceCapture, UploadedFileSourceCapture>();
+        services.AddScoped<CaptureSourceSnapshotHandler>();
         services.AddScoped<CreateSourceHandler>();
         services.AddScoped<GetSourcesHandler>();
         services.AddScoped<GetSourceHandler>();

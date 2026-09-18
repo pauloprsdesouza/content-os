@@ -1,5 +1,6 @@
 using ContentOS.Application.Content.Ports;
 using ContentOS.Application.Operations.Ports;
+using ContentOS.Application.Operations.Progress;
 using ContentOS.Application.Persistence;
 using ContentOS.Domain.Content;
 using ContentOS.Domain.Operations;
@@ -10,7 +11,8 @@ public sealed class ApplyContentReviewResultHandler(
     IContentVersionRepository versions,
     IOperationRepository operations,
     TimeProvider clock,
-    IChangeCommitter changes)
+    IChangeCommitter changes,
+    IOperationProgress progress)
 {
     public async Task<ApplyContentReviewResultResult> HandleAsync(
         ApplyContentReviewResultCommand command,
@@ -46,6 +48,7 @@ public sealed class ApplyContentReviewResultHandler(
         {
             operation.MarkFailed(command.ErrorMessage ?? "Content review failed.", now);
             await changes.CommitAsync(cancellationToken);
+            OperationProgressNotifications.Notify(progress, operation);
             return ApplyContentReviewResultResult.Applied();
         }
 
@@ -66,6 +69,7 @@ public sealed class ApplyContentReviewResultHandler(
         }
 
         await changes.CommitAsync(cancellationToken);
+        OperationProgressNotifications.Notify(progress, operation);
         return ApplyContentReviewResultResult.Applied();
     }
 }

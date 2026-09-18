@@ -6,6 +6,7 @@ public static class OperationsEndpointRouteBuilderExtensions
     {
         var operations = endpoints.MapGroup("/api/v1/operations");
         operations.MapGetOperation();
+        operations.MapWatchOperationEvents();
 
         return endpoints;
     }

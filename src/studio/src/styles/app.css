@@ -32,10 +32,6 @@ input {
   background: var(--primary);
 }
 
-.brand-mark {
-  letter-spacing: 0.02em;
-}
-
 @media (max-width: 900px) {
   .app-sidebar {
     position: static;

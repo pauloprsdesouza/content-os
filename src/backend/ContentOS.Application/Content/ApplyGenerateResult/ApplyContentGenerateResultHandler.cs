@@ -1,5 +1,6 @@
 using ContentOS.Application.Content.Ports;
 using ContentOS.Application.Operations.Ports;
+using ContentOS.Application.Operations.Progress;
 using ContentOS.Application.Persistence;
 using ContentOS.Domain.Content;
 using ContentOS.Domain.Operations;
@@ -10,7 +11,8 @@ public sealed class ApplyContentGenerateResultHandler(
     IContentVersionRepository versions,
     IOperationRepository operations,
     TimeProvider clock,
-    IChangeCommitter changes)
+    IChangeCommitter changes,
+    IOperationProgress progress)
 {
     public async Task<ApplyContentGenerateResultResult> HandleAsync(
         ApplyContentGenerateResultCommand command,
@@ -46,6 +48,7 @@ public sealed class ApplyContentGenerateResultHandler(
         {
             operation.MarkFailed(command.ErrorMessage ?? "Content generation failed.", now);
             await changes.CommitAsync(cancellationToken);
+            OperationProgressNotifications.Notify(progress, operation);
             return ApplyContentGenerateResultResult.Applied();
         }
 
@@ -74,6 +77,7 @@ public sealed class ApplyContentGenerateResultHandler(
         }
 
         await changes.CommitAsync(cancellationToken);
+        OperationProgressNotifications.Notify(progress, operation);
         return ApplyContentGenerateResultResult.Applied();
     }
 }

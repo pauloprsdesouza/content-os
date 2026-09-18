@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react"
 import { Navigate, useLocation, useNavigate } from "react-router"
 import { toast } from "sonner"
 
+import { BrandMark } from "@/components/brand-mark"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -42,6 +43,7 @@ export function LoginPage() {
         },
       })
 
+      clearCsrfToken()
       await refreshSession()
       toast.success("Sessão iniciada")
       navigate(from, { replace: true })
@@ -59,11 +61,9 @@ export function LoginPage() {
   return (
     <main className="grid min-h-screen bg-[var(--ink)] lg:grid-cols-[1fr_500px] lg:items-center lg:gap-16 lg:px-20 xl:px-28">
       <section className="hidden text-white lg:block">
-        <div className="mb-16">
-          <div className="brand-mark text-lg font-bold tracking-[0.02em]">CONTENT</div>
-          <div className="mt-1 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--info)]">
-            STUDIO
-          </div>
+        <div className="mb-16 flex items-center gap-4">
+          <BrandMark size={56} />
+          <p className="m-0 text-xl font-bold tracking-[0.02em] text-white">CONTENT OS</p>
         </div>
         <h1 className="m-0 max-w-[620px] text-[42px] font-bold leading-[1.2] tracking-[-0.03em]">
           Conhecimento confiável.
@@ -77,11 +77,9 @@ export function LoginPage() {
 
       <section className="flex min-h-screen items-center justify-center p-6 lg:min-h-0 lg:justify-end lg:p-0">
         <div className="w-full max-w-[500px] rounded-[var(--radius-xl)] bg-[var(--card)] px-10 py-12 shadow-[var(--shadow-card)] sm:px-12 sm:py-14">
-          <div className="mb-8 lg:hidden">
-            <div className="brand-mark text-base font-bold">CONTENT</div>
-            <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--info)]">
-              STUDIO
-            </div>
+          <div className="mb-8 flex items-center gap-3 lg:hidden">
+            <BrandMark size={40} />
+            <p className="m-0 text-base font-bold tracking-[0.02em] text-[var(--ink)]">CONTENT OS</p>
           </div>
           <h2 className="m-0 text-[30px] font-bold tracking-[-0.03em] text-[var(--foreground)]">
             Entrar

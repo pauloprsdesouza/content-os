@@ -1,5 +1,6 @@
 using ContentOS.Application.Knowledge.Claims.Promote;
 using ContentOS.Application.Operations.Ports;
+using ContentOS.Application.Operations.Progress;
 using ContentOS.Application.Persistence;
 using ContentOS.Application.Research.Ports;
 using ContentOS.Domain.Operations;
@@ -14,7 +15,8 @@ public sealed class ApplyResearchResultHandler(
     IIdGenerator ids,
     TimeProvider clock,
     IChangeCommitter changes,
-    PromoteResearchFindingsHandler promoter)
+    PromoteResearchFindingsHandler promoter,
+    IOperationProgress progress)
 {
     public async Task<ApplyResearchResultResult> HandleAsync(
         ApplyResearchResultCommand command,
@@ -56,6 +58,7 @@ public sealed class ApplyResearchResultHandler(
             job.MarkFailed(command.ErrorMessage ?? "Research job failed.", now);
             operation.MarkFailed(command.ErrorMessage ?? "Research job failed.", now);
             await changes.CommitAsync(cancellationToken);
+            OperationProgressNotifications.Notify(progress, operation);
             return ApplyResearchResultResult.Applied();
         }
 
@@ -92,6 +95,7 @@ public sealed class ApplyResearchResultHandler(
         job.MarkAwaitingKnowledgeReview(findings.Select(item => item.Entity).ToList(), now);
         operation.MarkSucceeded(now);
         await changes.CommitAsync(cancellationToken);
+        OperationProgressNotifications.Notify(progress, operation);
         return ApplyResearchResultResult.Applied();
     }
 }

@@ -11,6 +11,7 @@ Research jobs, author/reviewer agents, model gateway aliases, ContentUnit/Conten
 - Domain: `ResearchJob` (+ findings), `ContentUnit`/`ContentVersion`, minimal `Operation`.
 - API: research-jobs, content-units/versions (If-Match gates), operations, internal snapshot-by-hash tool API.
 - Messaging: RabbitMQ CloudEvents (`contentos.ai` / `backend.ai.results`); worker stub when `CONTENT_OS_AI_STUB=true` or no LiteLLM key.
+- Studio follows operation status with SSE (`GET /api/v1/operations/{id}/events`), not client polling.
 - Studio: Pesquisa + Conteúdo wired (pt-BR).
 
 ## Invariants
@@ -26,4 +27,4 @@ Commands: `ai.research`, `ai.content.generate`, `ai.content.review`, `ai.documen
 
 ## Test plan
 
-Duplicate delivery; schema validation; Operation 202 polling; budget/timeout enforcement.
+Duplicate delivery; schema validation; Operation SSE until a terminal status; budget/timeout enforcement.

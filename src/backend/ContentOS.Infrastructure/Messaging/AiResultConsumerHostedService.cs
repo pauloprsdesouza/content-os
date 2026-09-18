@@ -318,6 +318,10 @@ public sealed class AiResultConsumerHostedService(
 
                 break;
             }
+            case AiMessageTypes.Research:
+            case AiMessageTypes.ContentGenerate:
+            case AiMessageTypes.ContentReview:
+                return AiResultDisposition.Ack;
             default:
                 logger.LogWarning("Unhandled AI result type {Type}", type);
                 return AiResultDisposition.DeadLetter;

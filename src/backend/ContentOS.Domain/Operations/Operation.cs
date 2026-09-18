@@ -1,7 +1,7 @@
 namespace ContentOS.Domain.Operations;
 
 /// <summary>
-/// Minimal durable async work handle for Studio polling (202 OperationAccepted).
+/// Minimal durable async work handle. Studio follows status through SSE.
 /// Assumption: stored in identity schema as platform support, not a product module.
 /// </summary>
 public sealed class Operation

@@ -12,5 +12,9 @@ public interface ISourceRepository
         Guid sourceId,
         CancellationToken cancellationToken = default);
 
+    Task<Source?> GetByCanonicalUriAsync(
+        SourceUri canonicalUri,
+        CancellationToken cancellationToken = default);
+
     void Add(Source source);
 }

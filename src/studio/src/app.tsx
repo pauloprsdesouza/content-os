@@ -9,8 +9,10 @@ import { ClaimsPage } from "@/pages/claims-page"
 import { ConteudoPage } from "@/pages/conteudo-page"
 import { DashboardPage } from "@/pages/dashboard-page"
 import { ProfilePage } from "@/pages/profile-page"
+import { HelpPage } from "@/pages/help-page"
 import { LoginPage } from "@/pages/login-page"
 import { PesquisaPage } from "@/pages/pesquisa-page"
+import { PreferencesPage } from "@/pages/preferences-page"
 import { PublicacaoPage } from "@/pages/publicacao-page"
 import { ResultadosPage } from "@/pages/resultados-page"
 import { SourceDetailPage } from "@/pages/source-detail-page"
@@ -27,6 +29,9 @@ export function App() {
             <Route element={<AppShell />}>
               <Route index element={<DashboardPage />} />
               <Route path="perfil" element={<ProfilePage />} />
+              <Route path="perfil/seguranca" element={<ProfilePage />} />
+              <Route path="preferencias" element={<PreferencesPage />} />
+              <Route path="ajuda" element={<HelpPage />} />
               <Route path="fontes" element={<SourcesPage />} />
               <Route path="fontes/:sourceId" element={<SourceDetailPage />} />
               <Route path="claims" element={<ClaimsPage />} />

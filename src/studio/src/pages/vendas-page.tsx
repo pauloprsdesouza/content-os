@@ -195,10 +195,10 @@ export function VendasPage() {
                             className={cn(
                               "rounded-[var(--radius-sm)] px-2 py-1 text-xs font-medium",
                               isSignal
-                                ? "bg-[var(--muted)] text-[var(--muted-foreground)]"
+                                ? "bg-[var(--background)] text-[var(--muted-foreground)]"
                                 : purchase.status === "Confirmed"
-                                  ? "bg-[var(--info)]/15 text-[var(--foreground)]"
-                                  : "bg-[var(--muted)] text-[var(--muted-foreground)]",
+                                  ? "rounded-full bg-[var(--success-soft)] text-[var(--success-foreground)]"
+                                  : "bg-[var(--background)] text-[var(--muted-foreground)]",
                             )}
                           >
                             {purchaseStatusLabel(purchase.status)}

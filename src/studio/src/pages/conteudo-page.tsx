@@ -17,7 +17,7 @@ import {
   type ContentUnitListItem,
   type ContentVersionDetail,
 } from "@/lib/api/content"
-import { pollOperationUntilSettled } from "@/lib/api/operations"
+import { watchOperation } from "@/lib/api/operations"
 
 function formatWhen(value: string) {
   return new Intl.DateTimeFormat("pt-BR", {
@@ -81,6 +81,52 @@ export function ConteudoPage() {
     void loadUnits()
   }, [])
 
+  useEffect(() => {
+    const operationId = version?.operationId
+    const versionId = version?.id
+    const status = version?.status
+    if (!operationId || !versionId || (status !== "GenerationQueued" && status !== "ReviewQueued")) {
+      return
+    }
+
+    const controller = new AbortController()
+    void watchOperation(operationId, () => undefined, controller.signal)
+      .then(async (operation) => {
+        if (controller.signal.aborted) {
+          return
+        }
+        if (operation.status === "Succeeded") {
+          toast.success(status === "ReviewQueued" ? "Revisão do agente concluída" : "Rascunho gerado")
+        } else if (operation.status === "Failed") {
+          toast.error(operation.errorMessage ?? "Falha na operação de conteúdo")
+        }
+        const refreshed = await getContentVersion(versionId)
+        if (controller.signal.aborted) {
+          return
+        }
+        setVersion(refreshed.data)
+        setEtag(refreshed.etag)
+        setUnits((current) =>
+          current.map((unit) =>
+            unit.latestVersionId === versionId
+              ? {
+                  ...unit,
+                  latestVersionStatus: refreshed.data.status,
+                  updatedAt: refreshed.data.updatedAt,
+                }
+              : unit,
+          ),
+        )
+      })
+      .catch((requestError: unknown) => {
+        if (requestError instanceof DOMException && requestError.name === "AbortError") {
+          return
+        }
+      })
+
+    return () => controller.abort()
+  }, [version?.id, version?.operationId, version?.status])
+
   async function handleCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setCreating(true)
@@ -97,12 +143,6 @@ export function ConteudoPage() {
 
       if ("operationId" in response) {
         toast.success("Geração enfileirada")
-        const operation = await pollOperationUntilSettled(response.operationId)
-        if (operation.status === "Succeeded") {
-          toast.success("Rascunho gerado")
-        } else if (operation.status === "Failed") {
-          toast.error(operation.errorMessage ?? "Falha na geração")
-        }
         await loadUnits()
       } else {
         toast.success("Unidade criada")
@@ -126,11 +166,9 @@ export function ConteudoPage() {
     }
     setActing(true)
     try {
-      const accepted = await requestContentReview(version.id)
+      await requestContentReview(version.id)
       toast.success("Revisão solicitada")
-      await pollOperationUntilSettled(accepted.operationId)
       await loadVersion(version.id)
-      await loadUnits(version.id)
     } catch (requestError) {
       handleActionError(requestError)
     } finally {

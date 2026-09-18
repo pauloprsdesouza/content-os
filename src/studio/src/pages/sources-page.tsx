@@ -1,6 +1,5 @@
-import { Plus } from "lucide-react"
 import { FormEvent, useEffect, useState } from "react"
-import { Link } from "react-router"
+import { Link, useNavigate } from "react-router"
 import { toast } from "sonner"
 
 import { EmptyState, ErrorState, LoadingState } from "@/components/page-states"
@@ -9,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ApiError } from "@/lib/api/client"
-import { createSource, listSources, type SourceListItem } from "@/lib/api/knowledge"
+import { captureSource, listSources, uploadSourceFile, type SourceListItem } from "@/lib/api/knowledge"
 
 function formatUpdatedAt(value: string) {
   return new Intl.DateTimeFormat("pt-BR", {
@@ -25,6 +24,8 @@ export function SourcesPage() {
   const [error, setError] = useState<string | null>(null)
   const [showCreate, setShowCreate] = useState(false)
   const [creating, setCreating] = useState(false)
+  const [mode, setMode] = useState<"web" | "file" | "text">("web")
+  const navigate = useNavigate()
 
   async function loadSources() {
     setLoading(true)
@@ -56,17 +57,23 @@ export function SourcesPage() {
     event.preventDefault()
     setCreating(true)
     const form = new FormData(event.currentTarget)
+    const displayName = String(form.get("displayName") ?? "").trim()
 
     try {
-      await createSource({
-        displayName: String(form.get("displayName") ?? ""),
-        location: String(form.get("location") ?? ""),
-        kind: String(form.get("kind") ?? "Web"),
-      })
-      toast.success("Fonte cadastrada")
+      const captured =
+        mode === "file"
+          ? await uploadSourceFile(displayName, form.get("file") as File)
+          : await captureSource({
+              mode,
+              displayName,
+              location: String(form.get("location") ?? "").trim() || undefined,
+              text: mode === "text" ? String(form.get("text") ?? "") : undefined,
+            })
+      toast.success("Snapshot capturado")
       setShowCreate(false)
       event.currentTarget.reset()
       await loadSources()
+      navigate(`/pesquisa?source=${captured.sourceId}&snapshot=${captured.snapshotId}`)
     } catch (requestError) {
       const message =
         requestError instanceof ApiError && requestError.status === 409
@@ -102,7 +109,6 @@ export function SourcesPage() {
           </p>
         </div>
         <Button type="button" onClick={() => setShowCreate((value) => !value)}>
-          <Plus className="size-4" />
           Adicionar fonte
         </Button>
       </div>
@@ -111,35 +117,67 @@ export function SourcesPage() {
         <Card>
           <CardContent className="p-6">
             <form className="grid gap-4 md:grid-cols-2" onSubmit={handleCreate}>
+              <div className="flex gap-2 md:col-span-2">
+                {(
+                  [
+                    ["web", "URL"],
+                    ["file", "Arquivo"],
+                    ["text", "Texto"],
+                  ] as const
+                ).map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                      mode === value
+                        ? "bg-[var(--primary)] text-white"
+                        : "bg-[var(--background)] text-[var(--muted-foreground)]"
+                    }`}
+                    onClick={() => setMode(value)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
               <div className="space-y-2 md:col-span-2">
                 <Label htmlFor="displayName">Nome</Label>
-                <Input id="displayName" name="displayName" required placeholder="Relatório anual" />
+                <Input id="displayName" name="displayName" required placeholder="Documentação da fonte" />
               </div>
-              <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="location">URI canônica</Label>
-                <Input
-                  id="location"
-                  name="location"
-                  required
-                  placeholder="https://exemplo.com/documento"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="kind">Tipo</Label>
-                <select
-                  id="kind"
-                  name="kind"
-                  defaultValue="Web"
-                  className="h-12 w-full rounded-[10px] border border-[var(--border)] bg-[var(--card)] px-3 text-[13px]"
-                >
-                  <option value="Web">Web</option>
-                  <option value="Upload">Upload</option>
-                  <option value="Api">Api</option>
-                </select>
-              </div>
+              {mode !== "file" && (
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="location">URL</Label>
+                  <Input
+                    id="location"
+                    name="location"
+                    required={mode === "web"}
+                    placeholder="https://exemplo.com/documento"
+                  />
+                </div>
+              )}
+              {mode === "file" && (
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="file">Arquivo de texto, markdown ou PDF</Label>
+                  <Input id="file" name="file" type="file" accept=".txt,.md,.pdf,text/plain,text/markdown,application/pdf" required />
+                  <p className="m-0 text-xs text-[var(--muted-foreground)]">
+                    PDF fica guardado. A pesquisa lê texto e markdown.
+                  </p>
+                </div>
+              )}
+              {mode === "text" && (
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="text">Texto</Label>
+                  <textarea
+                    id="text"
+                    name="text"
+                    required
+                    className="min-h-28 w-full rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-sm"
+                    placeholder="Cole o trecho que deve virar snapshot"
+                  />
+                </div>
+              )}
               <div className="flex items-end gap-3">
                 <Button type="submit" disabled={creating}>
-                  {creating ? "Salvando…" : "Salvar fonte"}
+                  {creating ? "Capturando…" : "Capturar snapshot"}
                 </Button>
                 <Button type="button" variant="outline" onClick={() => setShowCreate(false)}>
                   Cancelar

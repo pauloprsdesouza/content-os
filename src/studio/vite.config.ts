@@ -17,6 +17,8 @@ export default defineConfig({
         target: "http://localhost:5231",
         changeOrigin: true,
         secure: false,
+        timeout: 0,
+        proxyTimeout: 0,
       },
       "/health": {
         target: "http://localhost:5231",

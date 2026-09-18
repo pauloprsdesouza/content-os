@@ -31,4 +31,4 @@ Domain transition tests; review UI 409/412 states. SSRF-safe ingest and impact e
 
 ## Remaining gaps
 
-Research AI jobs, impact endpoints, Orval client, MFA enforcement, source integrity tabs, automatic extraction.
+Research AI jobs read the captured snapshot excerpt. Impact endpoints, Orval client, MFA enforcement, and source integrity tabs remain open. PDF text extraction and JavaScript rendering are still deferred.

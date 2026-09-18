@@ -1,8 +1,9 @@
 import { useState } from "react"
-import { LogOut, UserRound } from "lucide-react"
+import { CircleHelp, LogOut, Settings, UserRound } from "lucide-react"
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router"
 import { toast } from "sonner"
 
+import { BrandMark } from "@/components/brand-mark"
 import { useAuth } from "@/lib/auth"
 import { cn } from "@/lib/utils"
 
@@ -18,6 +19,7 @@ const navigation = [
   { label: "Publicação", href: "/publicacao", match: ["/publicacao"] },
   { label: "Vendas", href: "/vendas", match: ["/vendas"] },
   { label: "Resultados", href: "/resultados", match: ["/resultados"] },
+  { label: "Configurações", href: "/perfil", match: ["/perfil", "/preferencias", "/ajuda"] },
 ]
 
 function isActivePath(pathname: string, match: string[]) {
@@ -60,12 +62,13 @@ export function AppShell() {
   return (
     <div className="app-frame min-h-screen lg:grid lg:grid-cols-[var(--sidebar-width)_1fr]">
       <aside className="app-sidebar flex flex-col bg-[var(--sidebar)] px-4 py-7 text-white lg:sticky lg:top-0 lg:h-screen">
-        <div className="mb-10 px-3">
-          <div className="brand-mark text-[15px] font-bold leading-none tracking-[0.02em]">
-            CONTENT
-          </div>
-          <div className="mt-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--info)]">
-            STUDIO
+        <div className="mb-10 flex items-center gap-3 px-2">
+          <BrandMark size={36} />
+          <div>
+            <div className="text-[13px] font-bold leading-none tracking-[0.04em]">CONTENT</div>
+            <div className="mt-1.5 text-[10px] font-bold tracking-[0.14em] text-[var(--info)]">
+              STUDIO
+            </div>
           </div>
         </div>
 
@@ -157,12 +160,31 @@ export function AppShell() {
                   onClick={() => setAccountOpen(false)}
                 >
                   <UserRound className="size-4" aria-hidden />
-                  Perfil
+                  Meu perfil
                 </Link>
+                <Link
+                  role="menuitem"
+                  to="/preferencias"
+                  className="flex items-center gap-2 rounded-[var(--radius-sm)] px-2 py-2 text-sm hover:bg-[var(--background)]"
+                  onClick={() => setAccountOpen(false)}
+                >
+                  <Settings className="size-4" aria-hidden />
+                  Preferências
+                </Link>
+                <Link
+                  role="menuitem"
+                  to="/ajuda"
+                  className="flex items-center gap-2 rounded-[var(--radius-sm)] px-2 py-2 text-sm hover:bg-[var(--background)]"
+                  onClick={() => setAccountOpen(false)}
+                >
+                  <CircleHelp className="size-4" aria-hidden />
+                  Ajuda e suporte
+                </Link>
+                <div className="my-1 h-px bg-[var(--border)]" />
                 <button
                   type="button"
                   role="menuitem"
-                  className="flex w-full items-center gap-2 rounded-[var(--radius-sm)] px-2 py-2 text-left text-sm hover:bg-[var(--background)]"
+                  className="flex w-full items-center gap-2 rounded-[var(--radius-sm)] px-2 py-2 text-left text-sm text-[var(--destructive)] hover:bg-[var(--background)]"
                   onClick={() => void handleLogout()}
                 >
                   <LogOut className="size-4" aria-hidden />

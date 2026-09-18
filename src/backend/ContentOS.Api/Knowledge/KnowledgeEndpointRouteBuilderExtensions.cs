@@ -14,6 +14,9 @@ public static class KnowledgeEndpointRouteBuilderExtensions
         sources.MapGetSource();
         sources.MapGetSnapshots();
         sources.MapCreateSnapshot();
+        sources.MapCaptureExistingSource();
+
+        endpoints.MapGroup("/api/v1").MapCreateSourceCapture();
 
         var claims = endpoints.MapGroup("/api/v1/claims");
         claims.MapGetClaimReviewQueue();
