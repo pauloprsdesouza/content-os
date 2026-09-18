@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from uuid import uuid5
+
 from ai_worker.contracts.messages import (
     ContentGenerateCommandData,
     ContentGenerateCompletedData,
@@ -31,14 +33,25 @@ class StubAgent:
         )
         lines = [line.strip("- ").strip() for line in text.splitlines() if line.strip()]
         findings = [
-            ResearchFindingResult(statement=line[:500], confidence=0.72)
-            for line in lines[:3]
+            ResearchFindingResult(
+                statement=line[:500],
+                confidence=0.72,
+                source_snapshot_id=command.source_snapshot_id,
+                locator=f"stub:{index + 1}",
+                extraction_method="stub-agent",
+                finding_id=uuid5(command.research_job_id, f"finding:{index}"),
+            )
+            for index, line in enumerate(lines[:3])
         ]
         if not findings:
             findings = [
                 ResearchFindingResult(
                     statement=f"Stub finding for topic '{command.topic}'.",
                     confidence=0.7,
+                    source_snapshot_id=command.source_snapshot_id,
+                    locator="stub:1",
+                    extraction_method="stub-agent",
+                    finding_id=uuid5(command.research_job_id, "finding:0"),
                 )
             ]
         return ResearchCompletedData(

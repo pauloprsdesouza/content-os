@@ -19,12 +19,13 @@
     "data": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["researchJobId", "operationId", "topic"],
+      "required": ["researchJobId", "operationId", "topic", "sourceSnapshotId"],
       "properties": {
         "researchJobId": { "type": "string" },
         "operationId": { "type": "string" },
         "topic": { "type": "string" },
-        "scopeNotes": { "type": ["string", "null"] }
+        "scopeNotes": { "type": ["string", "null"] },
+        "sourceSnapshotId": { "type": "string" }
       }
     }
   }

@@ -48,12 +48,17 @@ export function getResearchJobFindings(jobId: string) {
   return apiRequest<ResearchFinding[]>(`/api/v1/research-jobs/${jobId}/claims`)
 }
 
-export function createResearchJob(input: { topic: string; scopeNotes?: string }) {
+export function createResearchJob(input: {
+  topic: string
+  scopeNotes?: string
+  sourceSnapshotId: string
+}) {
   return apiRequest<OperationAccepted>("/api/v1/research-jobs", {
     method: "POST",
     body: {
       topic: input.topic,
       scopeNotes: input.scopeNotes ?? null,
+      sourceSnapshotId: input.sourceSnapshotId,
     },
     idempotencyKey: crypto.randomUUID(),
   })

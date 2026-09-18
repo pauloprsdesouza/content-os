@@ -1,13 +1,16 @@
-import { useEffect, useState } from "react"
+import { FormEvent, useEffect, useState } from "react"
 import { toast } from "sonner"
 
 import { EmptyState, ErrorState, LoadingState } from "@/components/page-states"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { ApiError } from "@/lib/api/client"
 import {
   listPurchases,
   purchaseStatusLabel,
+  recordOrderSignal,
   runReconciliation,
   SIGNAL_PURCHASE_STATUSES,
   type PurchaseListItem,
@@ -49,6 +52,29 @@ export function VendasPage() {
   useEffect(() => {
     void load()
   }, [])
+
+  async function handleSignal(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const externalId = String(new FormData(event.currentTarget).get("externalId") ?? "").trim()
+    if (!externalId) {
+      return
+    }
+    setReconciling(true)
+    try {
+      await recordOrderSignal(externalId)
+      const result = await runReconciliation()
+      toast.success(
+        `Pedido consultado na Kiwify. ${result.confirmedCount} confirmada(s), ${result.ignoredCount} ignorada(s).`,
+      )
+      await load()
+    } catch (requestError) {
+      toast.error(
+        requestError instanceof Error ? requestError.message : "Não foi possível reconciliar o pedido.",
+      )
+    } finally {
+      setReconciling(false)
+    }
+  }
 
   async function handleReconcile() {
     setReconciling(true)
@@ -94,6 +120,23 @@ export function VendasPage() {
           {reconciling ? "Reconciliando…" : "Executar reconciliação"}
         </Button>
       </header>
+
+      <Card>
+        <CardContent className="pt-6">
+          <form className="flex flex-wrap items-end gap-3" onSubmit={(event) => void handleSignal(event)}>
+            <div className="min-w-64 flex-1 space-y-2">
+              <Label htmlFor="externalId">ID do pedido na Kiwify</Label>
+              <Input id="externalId" name="externalId" required placeholder="Cole o ID após a compra de teste" />
+            </div>
+            <Button type="submit" disabled={reconciling}>
+              {reconciling ? "Consultando…" : "Reconciliar este pedido"}
+            </Button>
+          </form>
+          <p className="mb-0 mt-2 text-xs text-[var(--muted-foreground)]">
+            Isso só registra o sinal. A venda só confirma se a Kiwify devolver o pedido pago.
+          </p>
+        </CardContent>
+      </Card>
 
       {loading && <LoadingState label="Carregando compras…" />}
       {!loading && error && <ErrorState title="Erro ao carregar" description={error} />}

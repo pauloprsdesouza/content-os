@@ -1,3 +1,4 @@
+using ContentOS.Application.Knowledge.Ports;
 using ContentOS.Application.Messaging;
 using ContentOS.Application.Operations.Ports;
 using ContentOS.Application.Persistence;
@@ -11,6 +12,7 @@ namespace ContentOS.Application.Research.Create;
 public sealed class CreateResearchJobHandler(
     IResearchJobRepository jobs,
     IOperationRepository operations,
+    ISnapshotExistsQuery snapshots,
     IAiCommandPublisher aiCommands,
     IIdGenerator ids,
     TimeProvider clock,
@@ -23,6 +25,12 @@ public sealed class CreateResearchJobHandler(
         if (string.IsNullOrWhiteSpace(command.Topic))
         {
             return CreateResearchJobResult.Invalid("RESEARCH_TOPIC_REQUIRED");
+        }
+
+        if (command.SourceSnapshotId == Guid.Empty
+            || !await snapshots.ExistsAsync(command.SourceSnapshotId, cancellationToken))
+        {
+            return CreateResearchJobResult.Invalid("RESEARCH_SNAPSHOT_REQUIRED");
         }
 
         var now = clock.GetUtcNow();
@@ -64,7 +72,8 @@ public sealed class CreateResearchJobHandler(
                     researchJobId = jobId,
                     operationId,
                     topic = job.Topic,
-                    scopeNotes = job.ScopeNotes
+                    scopeNotes = job.ScopeNotes,
+                    sourceSnapshotId = command.SourceSnapshotId
                 }),
             cancellationToken);
 

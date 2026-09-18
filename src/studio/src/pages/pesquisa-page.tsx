@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ApiError } from "@/lib/api/client"
+import { listSnapshots, listSources, type SnapshotItem, type SourceListItem } from "@/lib/api/knowledge"
 import { pollOperationUntilSettled } from "@/lib/api/operations"
 import {
   createResearchJob,
@@ -35,6 +36,9 @@ export function PesquisaPage() {
   const [creating, setCreating] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [operationStatus, setOperationStatus] = useState<string | null>(null)
+  const [sources, setSources] = useState<SourceListItem[]>([])
+  const [snapshots, setSnapshots] = useState<SnapshotItem[]>([])
+  const [sourceId, setSourceId] = useState("")
 
   async function loadJobs(preferId?: string | null) {
     setLoading(true)
@@ -74,7 +78,20 @@ export function PesquisaPage() {
 
   useEffect(() => {
     void loadJobs()
+    void listSources()
+      .then((page) => setSources(page.items))
+      .catch(() => setSources([]))
   }, [])
+
+  useEffect(() => {
+    if (!sourceId) {
+      setSnapshots([])
+      return
+    }
+    void listSnapshots(sourceId)
+      .then((page) => setSnapshots(page.items))
+      .catch(() => setSnapshots([]))
+  }, [sourceId])
 
   async function handleCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -83,11 +100,18 @@ export function PesquisaPage() {
     const form = new FormData(event.currentTarget)
     const topic = String(form.get("topic") ?? "").trim()
     const scopeNotes = String(form.get("scopeNotes") ?? "").trim()
+    const sourceSnapshotId = String(form.get("sourceSnapshotId") ?? "").trim()
+    if (!sourceSnapshotId) {
+      toast.error("Escolha um snapshot antes de pesquisar.")
+      setCreating(false)
+      return
+    }
 
     try {
       const accepted = await createResearchJob({
         topic,
         scopeNotes: scopeNotes || undefined,
+        sourceSnapshotId,
       })
       toast.success("Pesquisa enfileirada")
       setOperationStatus("Accepted")
@@ -130,7 +154,7 @@ export function PesquisaPage() {
 
       <Card>
         <CardContent className="space-y-4 pt-6">
-          <form className="grid gap-4 md:grid-cols-[1fr_1fr_auto]" onSubmit={handleCreate}>
+          <form className="grid gap-4 md:grid-cols-2" onSubmit={handleCreate}>
             <div className="space-y-2">
               <Label htmlFor="topic">Tópico</Label>
               <Input id="topic" name="topic" required placeholder="Ex.: Provenance no Content OS" />
@@ -139,8 +163,43 @@ export function PesquisaPage() {
               <Label htmlFor="scopeNotes">Escopo (opcional)</Label>
               <Input id="scopeNotes" name="scopeNotes" placeholder="Notas de escopo" />
             </div>
-            <div className="flex items-end">
-              <Button type="submit" disabled={creating}>
+            <div className="space-y-2">
+              <Label htmlFor="sourceId">Fonte</Label>
+              <select
+                id="sourceId"
+                className="flex h-9 w-full rounded-[var(--radius-md)] border border-[var(--border)] bg-transparent px-3 text-sm"
+                value={sourceId}
+                onChange={(event) => setSourceId(event.target.value)}
+              >
+                <option value="">Selecione</option>
+                {sources.map((source) => (
+                  <option key={source.id} value={source.id}>
+                    {source.displayName}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="sourceSnapshotId">Snapshot</Label>
+              <select
+                id="sourceSnapshotId"
+                name="sourceSnapshotId"
+                required
+                className="flex h-9 w-full rounded-[var(--radius-md)] border border-[var(--border)] bg-transparent px-3 text-sm"
+                defaultValue=""
+              >
+                <option value="" disabled>
+                  {snapshots.length === 0 ? "Nenhum snapshot nesta fonte" : "Selecione"}
+                </option>
+                {snapshots.map((snapshot) => (
+                  <option key={snapshot.id} value={snapshot.id}>
+                    {snapshot.capturedAt.slice(0, 16)} · {snapshot.contentHash.slice(0, 8)}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="md:col-span-2">
+              <Button type="submit" disabled={creating || snapshots.length === 0}>
                 {creating ? "Enfileirando…" : "Nova pesquisa"}
               </Button>
             </div>

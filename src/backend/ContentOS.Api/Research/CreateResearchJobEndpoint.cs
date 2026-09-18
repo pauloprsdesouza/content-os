@@ -30,7 +30,8 @@ public static class CreateResearchJobEndpoint
                         new CreateResearchJobCommand(
                             request.Topic,
                             request.ScopeNotes,
-                            userId),
+                            userId,
+                            request.SourceSnapshotId),
                         cancellationToken);
 
                     if (result.IsSuccess)
@@ -50,6 +51,13 @@ public static class CreateResearchJobEndpoint
                         "RESEARCH_TOPIC_REQUIRED" => Results.Problem(
                             statusCode: StatusCodes.Status400BadRequest,
                             title: "Topic required",
+                            extensions: new Dictionary<string, object?>
+                            {
+                                ["code"] = result.ErrorCode
+                            }),
+                        "RESEARCH_SNAPSHOT_REQUIRED" => Results.Problem(
+                            statusCode: StatusCodes.Status422UnprocessableEntity,
+                            title: "A pesquisa precisa de um snapshot existente",
                             extensions: new Dictionary<string, object?>
                             {
                                 ["code"] = result.ErrorCode

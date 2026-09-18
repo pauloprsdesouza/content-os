@@ -10,6 +10,9 @@ public static class CommerceEndpointRouteBuilderExtensions
         var reconciliation = endpoints.MapGroup("/api/v1/commerce/reconciliation-runs");
         reconciliation.MapRunReconciliation();
 
+        var signals = endpoints.MapGroup("/api/v1/commerce");
+        signals.MapRecordCommerceOrderSignal();
+
         var purchases = endpoints.MapGroup("/api/v1/purchases");
         purchases.MapListPurchases();
 

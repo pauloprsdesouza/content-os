@@ -54,6 +54,13 @@ export function listPurchases(page = 1, pageSize = 25) {
   )
 }
 
+export function recordOrderSignal(externalId: string) {
+  return apiRequest<{ purchaseId: string; alreadyExisted: boolean }>(
+    "/api/v1/commerce/order-signals",
+    { method: "POST", body: { externalId } },
+  )
+}
+
 export function runReconciliation() {
   return apiRequest<ReconciliationRunResult>(
     "/api/v1/commerce/reconciliation-runs",

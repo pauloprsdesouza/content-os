@@ -25,6 +25,7 @@ class ResearchCommandData(BaseModel):
     operation_id: UUID = Field(alias="operationId")
     topic: str
     scope_notes: str | None = Field(default=None, alias="scopeNotes")
+    source_snapshot_id: UUID = Field(alias="sourceSnapshotId")
 
     model_config = {"populate_by_name": True}
 
@@ -54,6 +55,12 @@ class ContentReviewCommandData(BaseModel):
 class ResearchFindingResult(BaseModel):
     statement: str
     confidence: float
+    source_snapshot_id: UUID = Field(serialization_alias="sourceSnapshotId")
+    locator: str
+    extraction_method: str = Field(serialization_alias="extractionMethod")
+    finding_id: UUID = Field(serialization_alias="findingId")
+
+    model_config = {"populate_by_name": True}
 
 
 class ResearchCompletedData(BaseModel):

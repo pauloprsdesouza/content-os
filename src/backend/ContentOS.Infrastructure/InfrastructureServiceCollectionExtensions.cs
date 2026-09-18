@@ -6,6 +6,7 @@ using ContentOS.Application.Catalog.ReplaceCurriculum;
 using ContentOS.Application.Commerce.ListPurchases;
 using ContentOS.Application.Commerce.Ports;
 using ContentOS.Application.Commerce.ReceiveKiwifyWebhook;
+using ContentOS.Application.Commerce.RecordOrderSignal;
 using ContentOS.Application.Commerce.RunReconciliation;
 using ContentOS.Application.Content.Approve;
 using ContentOS.Application.Content.ApplyGenerateResult;
@@ -214,6 +215,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<ConfirmPublicationHandler>();
         services.AddScoped<GetOperationHandler>();
         services.AddScoped<ReceiveKiwifyWebhookHandler>();
+        services.AddScoped<RecordCommerceOrderSignalHandler>();
         services.AddScoped<RunReconciliationHandler>();
         services.AddScoped<ListPurchasesHandler>();
         services.AddScoped<GetOutcomesSummaryHandler>();
