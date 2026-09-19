@@ -24,7 +24,7 @@ function formatWhen(value: string) {
   }).format(new Date(value))
 }
 
-export function VendasPage() {
+export function VendasPage({ embedded = false }: { embedded?: boolean }) {
   const [purchases, setPurchases] = useState<PurchaseListItem[]>([])
   const [loading, setLoading] = useState(true)
   const [reconciling, setReconciling] = useState(false)
@@ -104,10 +104,12 @@ export function VendasPage() {
     <div className="space-y-6">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="m-0 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted-foreground)]">
-            Comércio
-          </p>
-          <h1 className="m-0 mt-1 text-2xl font-semibold tracking-tight">Vendas</h1>
+          {!embedded && (
+            <p className="m-0 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted-foreground)]">
+              Comércio
+            </p>
+          )}
+          <h2 className="m-0 mt-1 text-xl font-semibold tracking-tight">Vendas reconciliadas</h2>
           <p className="mb-0 mt-2 text-sm text-[var(--muted-foreground)]">
             Webhook = sinal. Venda confirmada só após reconciliação com o provedor.
           </p>

@@ -14,7 +14,7 @@ import {
   type ClaimQueueItem,
 } from "@/lib/api/knowledge"
 
-export function ClaimsPage() {
+export function ClaimsPage({ embedded = false }: { embedded?: boolean }) {
   const [queue, setQueue] = useState<ClaimQueueItem[]>([])
   const [index, setIndex] = useState(0)
   const [claim, setClaim] = useState<ClaimDetail | null>(null)
@@ -170,17 +170,20 @@ export function ClaimsPage() {
     )
   }
 
-  const progress = queue.length === 0 ? 0 : ((index + 1) / queue.length) * 100
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h2 className="m-0 text-[30px] font-bold tracking-[-0.03em] text-[var(--foreground)]">
-            Afirmações para revisar
+          {!embedded && (
+            <p className="m-0 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--primary)]">
+              Revisão
+            </p>
+          )}
+          <h2 className="m-0 text-2xl font-bold tracking-[-0.03em] text-[var(--foreground)]">
+            Afirmação {index + 1} de {queue.length}
           </h2>
           <p className="mb-0 mt-2 text-sm text-[var(--muted-foreground)]">
-            Afirmação {index + 1} de {queue.length} · Atalhos: A aprova · R rejeita
+            A afirmação não segue sem a sua decisão. Aprovar não publica.
           </p>
         </div>
         <Button variant="outline" type="button" onClick={() => void loadQueue(index)}>
@@ -197,67 +200,32 @@ export function ClaimsPage() {
         </div>
       )}
 
-      <div className="grid gap-4 xl:grid-cols-[1.35fr_0.65fr]">
-        <Card>
-          <CardContent className="space-y-6 p-6">
-            <div>
-              <p className="m-0 text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--primary)]">
-                Afirmação proposta
-              </p>
-              <p className="mb-0 mt-3 text-2xl font-bold leading-snug tracking-[-0.02em] text-[var(--foreground)]">
-                {claim.statement}
-              </p>
-              <p className="mb-0 mt-3 text-xs text-[var(--muted-foreground)]">
-                Confiança {(claim.confidence * 100).toFixed(0)}% · versão {claim.version}
-              </p>
-            </div>
-
-            <div>
-              <p className="m-0 text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--muted-foreground)]">
-                Evidências relacionadas
-              </p>
-              <div className="mt-4 space-y-3">
-                {claim.evidence.length === 0 ? (
-                  <div className="rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--background)] px-4 py-8 text-center text-sm text-[var(--muted-foreground)]">
-                    Sem evidências vinculadas.
-                  </div>
-                ) : (
-                  claim.evidence.map((item) => (
-                    <div
-                      key={item.evidenceId}
-                      className="rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--background)] px-4 py-3 text-sm"
-                    >
-                      <p className="m-0 font-medium">{item.locator}</p>
-                      <p className="mb-0 mt-1 text-xs text-[var(--muted-foreground)]">
-                        {item.extractionMethod} · confiança {(item.confidence * 100).toFixed(0)}%
-                      </p>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
+      <div className="grid gap-4 xl:grid-cols-[1.4fr_0.6fr]">
         <Card>
           <CardContent className="space-y-5 p-6">
-            <h3 className="m-0 text-lg font-semibold text-[var(--foreground)]">Decisão</h3>
-
+            <p className="m-0 inline-flex rounded-full bg-[color-mix(in_srgb,var(--primary)_12%,white)] px-2.5 py-1 text-[11px] font-semibold text-[var(--primary)]">
+              Proposta pela IA · não é uma decisão
+            </p>
+            <p className="m-0 text-2xl font-semibold leading-snug tracking-[-0.02em] text-[var(--foreground)]">
+              {claim.statement}
+            </p>
+            <p className="m-0 text-sm text-[var(--muted-foreground)]">
+              Se você aprovar, esta afirmação entra no conhecimento e pode ser citada na geração.
+              Ela não altera o currículo sozinha.
+            </p>
             <div>
-              <p className="mb-2 text-xs font-semibold text-[var(--muted-foreground)]">
-                Notas do revisor / motivo da rejeição
-              </p>
+              <p className="mb-2 text-xs font-semibold">Motivo da rejeição</p>
               <textarea
-                className="min-h-24 w-full resize-none rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-[13px]"
-                placeholder="Obrigatório para rejeitar."
+                className="min-h-20 w-full resize-none rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-[13px]"
+                placeholder="Obrigatório apenas se você rejeitar."
                 value={notes}
                 onChange={(event) => setNotes(event.target.value)}
               />
             </div>
-
-            <div className="grid grid-cols-2 gap-3">
+            <div className="flex justify-end gap-2">
               <Button
-                variant="destructive"
+                variant="outline"
+                className="border-[var(--destructive)] text-[var(--destructive)]"
                 disabled={acting}
                 type="button"
                 onClick={() => void handleReject()}
@@ -265,39 +233,61 @@ export function ClaimsPage() {
                 Rejeitar
               </Button>
               <Button disabled={acting} type="button" onClick={() => void handleApprove()}>
-                Aprovar
+                Aprovar afirmação
               </Button>
             </div>
-
             <div className="flex items-center justify-between text-xs text-[var(--muted-foreground)]">
               <button
                 type="button"
-                className="hover:text-[var(--foreground)]"
+                className="hover:text-[var(--foreground)] disabled:opacity-40"
                 disabled={index <= 0}
                 onClick={() => void goTo(index - 1)}
               >
-                ← Afirmação anterior
+                Anterior
               </button>
+              <span>
+                {index + 1} de {queue.length}
+              </span>
               <button
                 type="button"
-                className="hover:text-[var(--foreground)]"
+                className="hover:text-[var(--foreground)] disabled:opacity-40"
                 disabled={index >= queue.length - 1}
                 onClick={() => void goTo(index + 1)}
               >
-                Próxima afirmação →
+                Próxima
               </button>
             </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="space-y-4 p-6">
             <div>
-              <div className="mb-1 h-1.5 overflow-hidden rounded-full bg-[var(--background)]">
-                <div
-                  className="h-full rounded-full bg-[var(--primary)]"
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
-              <p className="mb-0 text-center text-xs text-[var(--muted-foreground)]">
-                {index + 1} de {queue.length}
+              <h3 className="m-0 text-base font-semibold">Evidência visível</h3>
+              <p className="mb-0 mt-1 text-xs text-[var(--muted-foreground)]">
+                Confiança {(claim.confidence * 100).toFixed(0)}% · versão {claim.version}
               </p>
             </div>
+            {claim.evidence.length === 0 ? (
+              <p className="m-0 text-sm text-[var(--muted-foreground)]">
+                Sem evidências vinculadas. Não aprove uma afirmação que você não consegue rastrear.
+              </p>
+            ) : (
+              claim.evidence.map((item, evidenceIndex) => (
+                <div
+                  key={item.evidenceId}
+                  className="rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--background)] px-4 py-3 text-sm"
+                >
+                  <p className="m-0 text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">
+                    {evidenceIndex === 0 ? "Prova principal" : "Apoio"}
+                  </p>
+                  <p className="mb-0 mt-2 font-medium">{item.locator}</p>
+                  <p className="mb-0 mt-1 text-xs text-[var(--muted-foreground)]">
+                    {item.extractionMethod} · confiança {(item.confidence * 100).toFixed(0)}%
+                  </p>
+                </div>
+              ))
+            )}
           </CardContent>
         </Card>
       </div>

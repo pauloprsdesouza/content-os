@@ -31,6 +31,12 @@ export function getPublicationPackage(packageId: string) {
   )
 }
 
+export function listPublicationPackages(editionId: string) {
+  return apiRequest<PublicationPackage[]>(
+    `/api/v1/editions/${editionId}/publication-packages`,
+  )
+}
+
 export function exportPublicationPackage(packageId: string) {
   return apiRequestWithEtag<PublicationPackage>(
     `/api/v1/publication-packages/${packageId}/export`,

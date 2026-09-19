@@ -53,6 +53,7 @@ using ContentOS.Application.Publication.ConfirmPublication;
 using ContentOS.Application.Publication.CreatePackage;
 using ContentOS.Application.Publication.ExportPackage;
 using ContentOS.Application.Publication.GetPackage;
+using ContentOS.Application.Publication.ListPackages;
 using ContentOS.Application.Publication.Ports;
 using ContentOS.Application.Research.ApplyResult;
 using ContentOS.Application.Research.Create;
@@ -280,6 +281,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<ReplaceCurriculumHandler>();
         services.AddScoped<CreatePublicationPackageHandler>();
         services.AddScoped<GetPublicationPackageHandler>();
+        services.AddScoped<ListPublicationPackagesHandler>();
         services.AddScoped<ExportPublicationPackageHandler>();
         services.AddScoped<ConfirmPublicationHandler>();
         services.AddScoped<GetOperationHandler>();

@@ -214,7 +214,7 @@ export function NovoConteudoWizard({ onCreated }: { onCreated: () => Promise<voi
         <div className="space-y-3">
           {products.length === 0 ? (
             <p className="m-0 text-sm">
-              Crie um produto em <Link to="/produtos">Produtos</Link> antes de escrever.
+              Crie um produto em <Link to="/edicoes">Edições</Link> antes de escrever.
             </p>
           ) : (
             <div className="grid gap-2 md:grid-cols-2">

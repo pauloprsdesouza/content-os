@@ -1,25 +1,19 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { CircleHelp, LogOut, Settings, UserRound } from "lucide-react"
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router"
 import { toast } from "sonner"
 
 import { BrandMark } from "@/components/brand-mark"
 import { useAuth } from "@/lib/auth"
+import { decisionCount, getDashboardSummary, reviewCount } from "@/lib/api/dashboard"
 import { cn } from "@/lib/utils"
 
 const navigation = [
-  { label: "Visão geral", href: "/", match: ["/"] },
-  {
-    label: "Conhecimento",
-    href: "/fontes",
-    match: ["/fontes", "/claims", "/pesquisa"],
-  },
-  { label: "Conteúdo", href: "/conteudo", match: ["/conteudo"] },
-  { label: "Produtos", href: "/produtos", match: ["/produtos"] },
-  { label: "Publicação", href: "/publicacao", match: ["/publicacao"] },
-  { label: "Vendas", href: "/vendas", match: ["/vendas"] },
-  { label: "Resultados", href: "/resultados", match: ["/resultados"] },
-  { label: "Configurações", href: "/perfil", match: ["/perfil", "/preferencias", "/ajuda"] },
+  { label: "Agora", href: "/", match: ["/"], countKey: "agora" as const },
+  { label: "Edições", href: "/edicoes", match: ["/edicoes", "/conteudo"] },
+  { label: "Revisão", href: "/revisao", match: ["/revisao"], countKey: "revisao" as const },
+  { label: "Fontes", href: "/fontes", match: ["/fontes", "/pesquisa"] },
+  { label: "Desempenho", href: "/desempenho", match: ["/desempenho"] },
 ]
 
 function isActivePath(pathname: string, match: string[]) {
@@ -46,6 +40,28 @@ export function AppShell() {
   const displayName = session?.userName ?? "Operador"
   const [accountOpen, setAccountOpen] = useState(false)
   const [logoutError, setLogoutError] = useState<string | null>(null)
+  const [counts, setCounts] = useState<{ agora: number; revisao: number } | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    getDashboardSummary()
+      .then((summary) => {
+        if (!cancelled) {
+          setCounts({
+            agora: decisionCount(summary),
+            revisao: reviewCount(summary),
+          })
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setCounts(null)
+        }
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   async function handleLogout() {
     setLogoutError(null)
@@ -73,8 +89,9 @@ export function AppShell() {
         </div>
 
         <nav className="app-nav flex-1 space-y-1" aria-label="Navegação principal">
-          {navigation.map(({ label, href, match }) => {
+          {navigation.map(({ label, href, match, countKey }) => {
             const active = isActivePath(location.pathname, match)
+            const count = countKey && counts ? counts[countKey] : 0
             return (
               <NavLink
                 key={href}
@@ -94,7 +111,19 @@ export function AppShell() {
                   )}
                   aria-hidden
                 />
-                {label}
+                <span className="flex-1">{label}</span>
+                {count > 0 && (
+                  <span
+                    className={cn(
+                      "rounded-full px-1.5 py-0.5 text-[10px] font-semibold",
+                      active
+                        ? "bg-[var(--info)] text-[var(--sidebar)]"
+                        : "bg-[var(--sidebar-active)] text-[var(--sidebar-foreground)]",
+                    )}
+                  >
+                    {count}
+                  </span>
+                )}
                 {active && (
                   <span className="absolute inset-y-2 left-0 w-0.5 rounded-full bg-[var(--info)]" />
                 )}

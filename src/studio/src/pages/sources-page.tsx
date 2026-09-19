@@ -109,16 +109,15 @@ export function SourcesPage() {
             Fontes
           </h2>
           <p className="mb-0 mt-2 text-sm text-[var(--muted-foreground)]">
-            Cadastre, monitore e verifique as origens do conhecimento
+            Cadastro, snapshot e pesquisa. A decisão sobre o que entra fica em Revisão.
           </p>
           <p className="mb-0 mt-3 text-xs text-[var(--muted-foreground)]">
-            Também em Conhecimento:{" "}
-            <Link className="font-semibold text-[var(--primary)] hover:underline" to="/claims">
-              Afirmações para revisar
-            </Link>
-            {" · "}
             <Link className="font-semibold text-[var(--primary)] hover:underline" to="/pesquisa">
               Pesquisa
+            </Link>
+            {" · "}
+            <Link className="font-semibold text-[var(--primary)] hover:underline" to="/revisao">
+              Revisão
             </Link>
           </p>
         </div>

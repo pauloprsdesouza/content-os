@@ -16,6 +16,7 @@ Research jobs, author/reviewer agents, model gateway aliases, ContentUnit/Conten
 - Selected topics become `text/plain` snapshots through the existing capture/blob/excerpt path. The draft cites those hashes.
 - Editorial series (format, area, window, cadence manual/weekly/monthly, owner) live in Content. Wolverine schedules the next collection (ADR-0004). A cadence run only creates topic candidates. It does not generate or publish.
 - Each content unit stores an optional `ProductId`. The wizard requires a product before format. Topic selection and series confirmation pass the same id. Approved versions still enter the product only through the edition curriculum.
+- Studio navigation follows the use-case IA: Agora, Edições, Revisão, Fontes, Desempenho. Account stays in the avatar. Legacy paths redirect.
 - Studio can create a product (and its first edition) and discard a product, source, research job, content unit, or editorial series. Discard is refused when the record is already in use: sales or enrollments, cited evidence, claims under review, or a curriculum placement.
 - API: research-jobs, content-units/versions (If-Match gates), topic-areas, topic-discoveries, editorial-series, operations, internal snapshot-by-hash tool API. DELETE on products, sources, research-jobs, content-units, and editorial-series. Product list includes the earliest edition id.
 - Messaging: RabbitMQ CloudEvents (`contentos.ai` / `backend.ai.results`); worker stub when `CONTENT_OS_AI_STUB=true` or no LiteLLM key. New command: `ai.topics.label`.

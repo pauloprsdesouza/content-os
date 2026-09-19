@@ -42,7 +42,7 @@ const cards: {
   },
 ]
 
-export function ResultadosPage() {
+export function ResultadosPage({ embedded = false }: { embedded?: boolean }) {
   const [summary, setSummary] = useState<OutcomesSummary | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -82,10 +82,12 @@ export function ResultadosPage() {
   return (
     <div className="space-y-6">
       <header>
-        <p className="m-0 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted-foreground)]">
-          Aprendizagem
-        </p>
-        <h1 className="m-0 mt-1 text-2xl font-semibold tracking-tight">Resultados</h1>
+        {!embedded && (
+          <p className="m-0 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted-foreground)]">
+            Aprendizagem
+          </p>
+        )}
+        <h2 className="m-0 mt-1 text-xl font-semibold tracking-tight">Resultado do aluno</h2>
         <p className="mb-0 mt-2 text-sm text-[var(--muted-foreground)]">
           Totais calculados no backend — fórmulas não são duplicadas no Studio.
         </p>

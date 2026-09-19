@@ -216,8 +216,8 @@ export function PesquisaPage() {
           <h1 className="m-0 mt-1 text-2xl font-semibold tracking-tight">Pesquisa</h1>
           <p className="mb-0 mt-2 text-sm text-[var(--muted-foreground)]">
             Crie jobs de pesquisa e acompanhe o status da operação até findings.
-            <Link className="ml-2 font-semibold text-[var(--primary)] hover:underline" to="/claims">
-              Afirmações para revisar
+            <Link className="ml-2 font-semibold text-[var(--primary)] hover:underline" to="/revisao">
+              Revisar afirmações
             </Link>
           </p>
         </div>

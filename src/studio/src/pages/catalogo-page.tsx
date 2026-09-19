@@ -1,8 +1,9 @@
 import { FormEvent, useEffect, useState } from "react"
-import { Link } from "react-router"
+import { Link, useSearchParams } from "react-router"
 import { toast } from "sonner"
 
 import { EmptyState, ErrorState, LoadingState } from "@/components/page-states"
+import { EditionPublication } from "@/components/edition-publication"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -18,7 +19,7 @@ import {
   type EditionDetail,
   type ProductListItem,
 } from "@/lib/api/catalog"
-import { listContentUnits, type ContentUnitListItem } from "@/lib/api/content"
+import { getContentVersion, listContentUnits, type ContentUnitListItem } from "@/lib/api/content"
 
 function formatWhen(value: string) {
   return new Intl.DateTimeFormat("pt-BR", {
@@ -28,10 +29,13 @@ function formatWhen(value: string) {
 }
 
 export function CatalogoPage() {
+  const [searchParams] = useSearchParams()
+  const requestedProductId = searchParams.get("produto")
   const [products, setProducts] = useState<ProductListItem[]>([])
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null)
   const [edition, setEdition] = useState<EditionDetail | null>(null)
   const [etag, setEtag] = useState<string | null>(null)
+  const [versionTitles, setVersionTitles] = useState<Record<string, string>>({})
   const [approvedUnits, setApprovedUnits] = useState<ContentUnitListItem[]>([])
   const [draftOrder, setDraftOrder] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
@@ -39,6 +43,7 @@ export function CatalogoPage() {
   const [creating, setCreating] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [conflict, setConflict] = useState<string | null>(null)
+  const [pendingCount, setPendingCount] = useState(0)
 
   async function load(preferProductId?: string) {
     setLoading(true)
@@ -50,14 +55,16 @@ export function CatalogoPage() {
       ])
       setProducts(productPage.items)
       const product =
-        productPage.items.find((item) => item.id === (preferProductId ?? selectedProductId)) ??
-        productPage.items[0]
+        productPage.items.find(
+          (item) => item.id === (preferProductId ?? requestedProductId ?? selectedProductId),
+        ) ?? productPage.items[0]
       setSelectedProductId(product?.id ?? null)
 
       if (!product?.editionId) {
         setEdition(null)
         setEtag(null)
         setDraftOrder([])
+        setVersionTitles({})
         setApprovedUnits([])
         return
       }
@@ -66,6 +73,7 @@ export function CatalogoPage() {
       setEdition(editionResult.data)
       setEtag(editionResult.etag)
       setDraftOrder(editionResult.data.curriculum.map((item) => item.contentVersionId))
+      setVersionTitles(await loadCurriculumTitles(editionResult.data.curriculum, unitsPage.items))
       writeCatalogSelection({
         productId: editionResult.data.productId,
         editionId: editionResult.data.id,
@@ -77,6 +85,12 @@ export function CatalogoPage() {
             unit.latestVersionStatus === "Approved" &&
             unit.productId === product.id,
         ),
+      )
+      setPendingCount(
+        unitsPage.items.filter(
+          (unit) =>
+            unit.productId === product.id && unit.latestVersionStatus === "PendingHumanApproval",
+        ).length,
       )
     } catch (requestError) {
       setError(
@@ -150,6 +164,40 @@ export function CatalogoPage() {
     }
   }
 
+  async function addApprovedAndSave() {
+    if (!edition || !etag) {
+      return
+    }
+    const missing = approvedUnits
+      .map((unit) => unit.latestVersionId)
+      .filter((id): id is string => Boolean(id))
+      .filter((id) => !draftOrder.includes(id))
+    if (missing.length === 0) {
+      return
+    }
+    const next = [...draftOrder, ...missing]
+    setDraftOrder(next)
+    setSaving(true)
+    setConflict(null)
+    try {
+      const result = await replaceCurriculum(edition.id, etag, next)
+      setEtag(result.etag)
+      toast.success("Versões adicionadas ao currículo")
+      await load()
+    } catch (requestError) {
+      if (requestError instanceof ApiError && requestError.status === 412) {
+        setConflict("A edição mudou (412). Recarregue antes de salvar.")
+        toast.error("Conflito de versão (412)")
+      } else {
+        toast.error(
+          requestError instanceof Error ? requestError.message : "Não foi possível atualizar o currículo.",
+        )
+      }
+    } finally {
+      setSaving(false)
+    }
+  }
+
   async function handleCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const form = event.currentTarget
@@ -189,6 +237,9 @@ export function CatalogoPage() {
     }
   }
 
+  const missingApproved = approvedUnits.filter(
+    (unit) => unit.latestVersionId && !draftOrder.includes(unit.latestVersionId),
+  )
   const approvedByVersionId = new Map(
     approvedUnits
       .filter((unit) => unit.latestVersionId)
@@ -199,11 +250,14 @@ export function CatalogoPage() {
     <div className="space-y-6">
       <header>
         <p className="m-0 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted-foreground)]">
-          Catálogo
+          Edições
         </p>
-        <h1 className="m-0 mt-1 text-2xl font-semibold tracking-tight">Produtos</h1>
+        <h1 className="m-0 mt-1 text-2xl font-semibold tracking-tight">Produto e publicação</h1>
         <p className="mb-0 mt-2 text-sm text-[var(--muted-foreground)]">
-          Produto, edição e currículo com versões aprovadas explícitas (nunca “latest”).
+          O currículo só recebe versão aprovada. O arquivo baixado não publica na Kiwify.{" "}
+          <Link className="font-semibold text-[var(--primary)]" to="/conteudo">
+            Novo conteúdo
+          </Link>
         </p>
       </header>
 
@@ -302,6 +356,24 @@ export function CatalogoPage() {
               </CardContent>
             </Card>
 
+            {missingApproved.length > 0 && (
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-md)] border border-[var(--warning)] bg-[color-mix(in_srgb,var(--warning)_18%,white)] px-4 py-3">
+                <div>
+                  <p className="m-0 text-[11px] font-semibold uppercase tracking-[0.08em]">Próxima ação</p>
+                  <p className="mb-0 mt-1 text-sm">
+                    {missingApproved.length}{" "}
+                    {missingApproved.length === 1
+                      ? "versão aprovada ainda não está"
+                      : "versões aprovadas ainda não estão"}{" "}
+                    no currículo. O pacote só existe quando o currículo fechar.
+                  </p>
+                </div>
+                <Button type="button" disabled={saving} onClick={() => void addApprovedAndSave()}>
+                  {saving ? "Salvando…" : "Adicionar ao currículo"}
+                </Button>
+              </div>
+            )}
+
             <Card>
               <CardContent className="space-y-4 pt-6">
                 <div className="flex items-center justify-between gap-3">
@@ -319,15 +391,14 @@ export function CatalogoPage() {
                   <ol className="m-0 list-decimal space-y-2 pl-5">
                     {draftOrder.map((versionId, index) => {
                       const unit = approvedByVersionId.get(versionId)
+                      const title = versionTitles[versionId] || unit?.title
                       return (
                         <li key={versionId} className="text-sm">
                           <div className="flex flex-wrap items-center gap-2">
-                            <span className="font-medium">
-                              {unit?.title ?? versionId.slice(0, 8)}
-                            </span>
-                            <span className="text-xs text-[var(--muted-foreground)]">
-                              {versionId}
-                            </span>
+                            <span className="font-medium">{title || "Peça sem título"}</span>
+                            {!title && (
+                              <span className="text-xs text-[var(--muted-foreground)]">{versionId}</span>
+                            )}
                             <Button
                               type="button"
                               size="sm"
@@ -368,7 +439,7 @@ export function CatalogoPage() {
                 <h3 className="m-0 text-base font-semibold">Versões aprovadas</h3>
                 {approvedUnits.length === 0 ? (
                   <p className="m-0 text-sm text-[var(--muted-foreground)]">
-                    Aprove ContentVersions em Conteúdo para montar o currículo.
+                    Aprove versões em Revisão para montar o currículo.
                   </p>
                 ) : (
                   <ul className="m-0 space-y-2 p-0">
@@ -402,9 +473,46 @@ export function CatalogoPage() {
                 )}
               </CardContent>
             </Card>
+
+            <EditionPublication edition={edition} />
+
+            <div className="grid gap-4 lg:grid-cols-2">
+              <Card>
+                <CardContent className="space-y-2 pt-6">
+                  <h3 className="m-0 text-base font-semibold">Conhecimento desta edição</h3>
+                  <p className="m-0 text-sm text-[var(--muted-foreground)]">
+                    {approvedUnits.length} versões aprovadas · {pendingCount} na fila de revisão.
+                  </p>
+                  <Link className="text-sm font-semibold text-[var(--primary)]" to="/revisao">
+                    Ir para a revisão
+                  </Link>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
       )}
     </div>
   )
+}
+
+async function loadCurriculumTitles(
+  curriculum: { contentVersionId: string }[],
+  units: ContentUnitListItem[],
+) {
+  const titleByUnit = new Map(units.map((unit) => [unit.id, unit.title]))
+  const titles: Record<string, string> = {}
+  await Promise.all(
+    curriculum.map(async (item) => {
+      try {
+        const version = await getContentVersion(item.contentVersionId)
+        const body = version.data.bodyMarkdown ?? ""
+        const heading = body.match(/^#{1,3}\s+(.+)$/m)?.[1]?.replace(/[*_`]/g, "").trim()
+        titles[item.contentVersionId] = titleByUnit.get(version.data.contentUnitId) || heading || ""
+      } catch {
+        titles[item.contentVersionId] = ""
+      }
+    }),
+  )
+  return titles
 }
